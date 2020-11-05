@@ -53,7 +53,7 @@ class Ui_MainWindow(object):
         self.pushButton_2.setText(_translate("MainWindow", "PushButton"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.actionLoad_world.setText(_translate("MainWindow", "Load world"))
-        self.actionSave_world.setText(_translate("MainWindow", "Save world"))
+        self.actionLoad_world.setText(_translate("MainWindow", "Load base"))
+        self.actionSave_world.setText(_translate("MainWindow", "Save base"))
 
 

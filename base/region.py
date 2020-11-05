@@ -1,6 +1,10 @@
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsSceneMouseEvent
+from typing import Optional, List, Any
+
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsSceneMouseEvent
+from nptyping import NDArray
+
+from utils.log import get_logger
 
 
 class Region(QGraphicsObject):
@@ -17,51 +21,55 @@ class Region(QGraphicsObject):
 
     trigger = pyqtSignal()
 
-    def __init__(self, x, y, region_list, name, region_id, climate, relief, vegetation, water, worldobject, signal):
+    def __init__(self, x: int, y: int, region_list: List[int], name: str, region_id: int, climate_id: int,
+                 relief_id: int, vegetation_id: int, water_id: int, worldobject_id: int, signal: pyqtSignal):
         # X and Y coordinates start top-left corner.
         super().__init__()
-        self.x = x          # world x
-        self.y = y          # world y
 
-        self.region_list = region_list
+        if not hasattr(self, 'logger'):
+            self.logger = get_logger(__class__.__name__)
 
-        self.image_coords = None
+        self.x: int = x  # base x
+        self.y: int = y  # base y
+
+        self.region_list: List[int] = region_list
+
+        self.image_coords: Optional[Any] = None
 
         # Region name.
-        self.name = name
-        self.region_id = region_id
+        self.name: str = name
+        self.region_id: int = region_id
 
-        self.climate_id = climate
-        self.climate_str = self.CLIMATES[climate]
+        self.climate_id: int = climate_id
+        self.climate_str = self.CLIMATES[climate_id]
 
-        self.relief_id = relief
-        self.relief_str = self.RELIEF[relief]
+        self.relief_id: int = relief_id
+        self.relief_str = self.RELIEF[relief_id]
 
-        self.vegetation_id = vegetation
-        self.vegetation_str = self.VEGETATION[vegetation]
+        self.vegetation_id: int = vegetation_id
+        self.vegetation_str = self.VEGETATION[vegetation_id]
 
-        self.water_id = water
-        self.water_str = self.WATER[water]
+        self.water_id: int = water_id
+        self.water_str = self.WATER[water_id]
 
-        self.world_object_id = worldobject
-        self.world_object_str = self.WORLD_OBJECT[worldobject]
+        self.world_object_id: int = worldobject_id
+        self.world_object_str = self.WORLD_OBJECT[worldobject_id]
 
         # contains information about coast and river adjacency
-        self.coastal_adjacency = None
-        self.river_adjacency = None
+        self.coastal_adjacency: Optional[NDArray[3, 3, bool]] = None
+        self.river_adjacency: Optional[NDArray[3, 3, bool]] = None
 
         # Holds region sprite
-        self.region_sprite = RegionPixmap(self.trigger)
-        self.region_sprite_loaded = False
+        self.region_sprite: RegionPixmap = RegionPixmap(self.trigger)
+        self.region_sprite_loaded: bool = False
 
-        self.region_changed = False
-        self.world_trigger = signal
+        self.region_changed: bool = False
+        self.world_trigger: pyqtSignal = signal
 
         self.trigger.connect(self.signal_to_climate)
 
-
     def signal_to_climate(self):
-        print('i am in signal to climate')
+        self.logger.debug("Entered function signal_flag to climate_id")
         self.climate_id = 0
         self.world_trigger.emit(self.region_id)
 
@@ -134,13 +142,20 @@ class Region(QGraphicsObject):
 
         # self.world_trigger.emit(self.region_id)
 
+    def __repr__(self):
+        return self.climate_str
+
+
 class RegionPixmap(QGraphicsPixmapItem):
     def __init__(self, trigger):
         super().__init__()
-        self.trigger = trigger
 
+        if not hasattr(self, 'logger'):
+            self.logger = get_logger(__class__.__name__)
+
+        self.trigger = trigger
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         # self.climate_id = 0
         self.trigger.emit()
-        print(self.pos().x(), self.pos().y())
+        self.logger.debug("mousePressEvent: %d, %d", self.pos().x(), self.pos().y())

@@ -1,12 +1,12 @@
-from region import Region
-from image import WorldmapSprites
-from PIL import Image, ImageQt
+from typing import Optional, List, Tuple, Any, NoReturn
+
 import numpy as np
-from joblib import Parallel, delayed
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
-from PyQt5.QtWidgets import QGraphicsScene
-from multiprocessing import Pool
-import multiprocessing as mp
+from PIL import Image
+from PyQt5.QtCore import pyqtSignal, QObject
+
+from base.image import WorldmapSprites
+from base.region import Region
+from utils.log import get_logger
 
 
 class World(QObject):
@@ -14,39 +14,46 @@ class World(QObject):
 
     def __init__(self, scale):
         super().__init__()
-        self.pixmap_flag = True #Use pixmaps instead of PIL images.
+        self.pixmap_flag = True  # Use pixmaps instead of PIL images.
         self.region_check_queue = []
 
-        self.x_width = None  # Width of the world.
-        self.y_height = None  # Height of the world.
-        self.nr_regions = None  # nr of regions in the world.
-        self.region_names = None  # region names
-        self.xy_regions = None  # x and y coordinates of the region. (0,0) is top left.
-        self.region_information_list = None  # List containing region information, climate, water etc.
-        self.region_information_slice = None  # Start location to splice region information list into region info.
+        self.x_width: Optional[int] = None  # Width of the base.
+        self.y_height: Optional[int] = None  # Height of the base.
+        self.nr_regions: Optional[int] = None  # nr of regions in the base.
+        self.region_names: Optional[List[str]] = None  # region names
+        self.xy_regions: Optional[Tuple[int, int]] = None  # x and y coordinates of the region. (0,0) is top left.
+        self.region_info_lst: Optional[
+            List[Any]] = None  # List containing region information, climate_id, water_id etc.
+        self.region_info_slice: Optional[
+            slice] = None  # Start location to splice region information list into region info.
         self.regions = None  # Contains region objects which hold region info.
-        self.region_signal_list = None  # list containing copies of the PyQt signal to be send to region during init
+        self.region_signal_lst: Optional[
+            List[pyqtSignal]] = None  # list containing copies of the PyQt signal_flag to be send to region during init
 
         # Sprite related stuff
-        self.sprite_generator = WorldmapSprites()
-        self._REGION_IMAGE_WIDTH = 300
-        self._REGION_IMAGE_HEIGHT = 225
+        self.sprite_generator: WorldmapSprites = WorldmapSprites()
+        self._REGION_IMAGE_WIDTH: int = 300
+        self._REGION_IMAGE_HEIGHT: int = 225
         self.scale = scale
-        self.worldmap_image = None  # Hold created full worldmap image.
+        self.worldmap_image: Optional[type(Image)] = None  # Hold created full worldmap image.
 
         # self.world_trigger.connect(self.create_region_sprite_signal)
         self.world_trigger.connect(self.create_region_sprite_signal)
 
+        # Add logger to this class (if it doesn't have one already)
+        if not hasattr(self, 'logger'):
+            self.logger = get_logger(__class__.__name__)
 
     def create_new_world(self, width, height, random_climate):
-        self.x_width = width
-        self.y_height = height
+        self.x_width: int = width
+        self.y_height: int = height
 
         # Create region base information.
-        self.nr_regions, self.region_names, self.xy_regions, self.region_information_list, \
-        self.region_information_splice, self.region_signal_list = self.create_region_base(random_climate=random_climate, loaded_file=False)
+        self.nr_regions, self.region_names, self.xy_regions, self.region_info_lst, \
+        self.region_info_slice, self.region_signal_lst = self.create_region_base(random_climate=random_climate,
+                                                                                 loaded_file=False)
 
-        # Populate world regions
+        # Populate base regions
         self.regions = self.create_regions()
 
         # Determine sprite related coastal and river adjacencies.
@@ -56,28 +63,27 @@ class World(QObject):
         # Create initial sprites
         self.create_all_region_sprites()
 
-    def load_world(self, filename):
+    def load_world(self, filename) -> NoReturn:
         with open(filename, mode='rb') as file:
-            self.region_information_list = list(file.read())
-            self.x_width = self.region_information_list[0]
-            self.y_height = self.region_information_list[2]
-            self.nr_regions, self.region_names, self.xy_regions, self.region_information_list, \
-            self.region_information_splice, self.region_signal_list = self.create_region_base(loaded_file=True)
+            self.region_info_lst = list(file.read())
+            self.x_width = self.region_info_lst[0]
+            self.y_height = self.region_info_lst[2]
+            self.nr_regions, self.region_names, self.xy_regions, self.region_info_lst, \
+            self.region_info_slice, self.region_signal_lst = self.create_region_base(loaded_file=True)
             self.regions = self.create_regions()
             # self.generate_coastal_adjacency()
             # self.generate_river_adjacency()
             self.create_all_region_sprites()
 
-
-    def create_all_region_sprites(self):
-        pool = Pool(processes=int(mp.cpu_count()/2))
-        print(self.regions)
+    def create_all_region_sprites(self) -> NoReturn:
+        # pool = Pool(processes=int(mp.cpu_count()/2))
+        self.logger.debug(f'{self.regions}')
         for region in self.regions:
-            print(region.region_id)
-            pool.apply(self.create_region_sprite, args=(region.region_id,))
-            # self.create_region_sprite(region.region_id)
+            self.logger.debug("region.region_id: %d", region.region_id)
+            # pool.apply(self.create_region_sprite, args=(region.region_id,))
+            self.create_region_sprite(region.region_id)
 
-    def create_world_image(self):
+    def create_world_image(self) -> NoReturn:
         total_image_width = self._REGION_IMAGE_WIDTH * self.x_width
         total_image_height = self._REGION_IMAGE_HEIGHT * self.y_height
         self.worldmap_image = Image.new('RGB', (total_image_width, total_image_height))
@@ -86,7 +92,7 @@ class World(QObject):
             self.worldmap_image.paste(region.region_sprite, region.region_xy_to_img_coords(self._REGION_IMAGE_WIDTH,
                                                                                            self._REGION_IMAGE_HEIGHT))
 
-    def create_region_base(self, loaded_file, random_climate=False):
+    def create_region_base(self, loaded_file: bool, random_climate: bool = False) -> NoReturn:
         if self.x_width != 0 or self.y_height != 0:
             nr_regions = self.x_width * self.y_height
         else:
@@ -94,7 +100,7 @@ class World(QObject):
         region_names = [f'region_{x}_{y}' for y in range(self.y_height) for x in range(self.x_width)]
         xy_regions = [[x, y] for y in range(self.y_height) for x in range(self.x_width)]
         if loaded_file:
-            region_information_list = self.region_information_list
+            region_information_list = self.region_info_lst
         elif random_climate:
             region_information_list = [self.x_width, 0, self.y_height, 0]
             for i in range(nr_regions):
@@ -106,52 +112,55 @@ class World(QObject):
         region_signal_list = [self.world_trigger] * nr_regions
         return nr_regions, region_names, xy_regions, region_information_list, region_information_slice, region_signal_list
 
-    def create_regions(self):
-        climate_id_list = [self.region_information_list[idx] for idx in self.region_information_splice]
-        relief_id_list = [self.region_information_list[idx + 1] for idx in (self.region_information_splice)]
-        vegetation_id_list = [self.region_information_list[idx + 2] for idx in (self.region_information_splice)]
-        water_id_list = [self.region_information_list[idx + 3] for idx in (self.region_information_splice)]
-        worldobject_id_list = [self.region_information_list[idx + 4] for idx in (self.region_information_splice)]
-        region_bytes = [self.region_information_list[idx:idx+5] for idx in (self.region_information_splice)]
+    def create_regions(self) -> NoReturn:
+        climate_id_list = [self.region_info_lst[idx] for idx in self.region_info_slice]
+        relief_id_list = [self.region_info_lst[idx + 1] for idx in (self.region_info_slice)]
+        vegetation_id_list = [self.region_info_lst[idx + 2] for idx in (self.region_info_slice)]
+        water_id_list = [self.region_info_lst[idx + 3] for idx in (self.region_info_slice)]
+        worldobject_id_list = [self.region_info_lst[idx + 4] for idx in (self.region_info_slice)]
+        region_bytes = [self.region_info_lst[idx:idx + 5] for idx in (self.region_info_slice)]
 
-        print('test')
-        region_list = [Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id, worldobject_id, signal)
-                       for region_id, ([x, y], region_bytes, name, climate_id, relief_id, vegetation_id, water_id, worldobject_id, signal)
-                       in enumerate(
-                zip(self.xy_regions, region_bytes, self.region_names, climate_id_list, relief_id_list, vegetation_id_list,
-                    water_id_list, worldobject_id_list, self.region_signal_list))]
-        print(region_list)
+        self.logger.debug('create_regions says: test')
+        region_list = [
+            Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id, worldobject_id,
+                   signal)
+            for region_id, (
+                [x, y], region_bytes, name, climate_id, relief_id, vegetation_id, water_id, worldobject_id, signal)
+            in enumerate(
+                zip(self.xy_regions, region_bytes, self.region_names, climate_id_list, relief_id_list,
+                    vegetation_id_list,
+                    water_id_list, worldobject_id_list, self.region_signal_lst))]
+        self.logger.debug("func create_regions: region list = %s", str(region_list))
         return region_list
 
-    def create_region_sprite_signal(self, region_id):
-        self.create_region_sprite(region_id, signal=True)
+    def create_region_sprite_signal(self, region_id: int) -> NoReturn:
+        self.create_region_sprite(region_id, signal_flag=True)
 
-
-    def create_region_sprite(self, region_id, signal=False):
-        print(region_id)
+    def create_region_sprite(self, region_id, signal_flag: bool = False) -> NoReturn:
+        self.logger.debug("func create_region_sprite(argument region_id = %d)", region_id)
         region = self.regions[region_id]
         self.generate_coastal_adjacency(region_id)
         self.generate_river_adjacency(region_id)
 
         sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
-                                                                  region.vegetation_id, region.water_id,
-                                                                  region.world_object_id,
-                                                                  region.coastal_adjacency,
-                                                                  region.river_adjacency,
-                                                                  self.pixmap_flag,
-                                                                  self.scale)
+                                                              region.vegetation_id, region.water_id,
+                                                              region.world_object_id,
+                                                              region.coastal_adjacency,
+                                                              region.river_adjacency,
+                                                              self.pixmap_flag,
+                                                              self.scale)
         if self.pixmap_flag:
             region.region_sprite.setPixmap(sprite)
         else:
             region.region_sprite(sprite)
         region.region_changed = True
 
-        if signal:
+        if signal_flag:
             for region_id_queue in self.region_check_queue:
-                print(np.random.randint(100))
+                self.logger.debug('random integer if signal_flag: %d', np.random.randint(100))
                 region = self.regions[region_id_queue]
-                self.generate_river_adjacency(region_id_queue, signal)
-                self.generate_coastal_adjacency(region_id_queue, signal)
+                self.generate_river_adjacency(region_id_queue, signal_flag)
+                self.generate_coastal_adjacency(region_id_queue, signal_flag)
                 sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                                       region.vegetation_id, region.water_id,
                                                                       region.world_object_id,
@@ -166,11 +175,11 @@ class World(QObject):
 
             self.region_check_queue = []
 
-    def generate_coastal_adjacency(self, region_id, signal = False):
+    def generate_coastal_adjacency(self, region_id: int, signal: bool = False) -> NoReturn:
         # region = self.regions[region_id]
         n = region_id
 
-        coastal_adjacency_temp = [0, 0, 0, 0, 0, 0, 0, 0]
+        coastal_adjacency_temp = [0, 0, 0, 0, 0, 0, 0, 0]  # 3x3 numpy array van maken?
         top_id = n - self.x_width
         top_left_id = n - self.x_width - 1
         left_id = n - 1
@@ -230,8 +239,7 @@ class World(QObject):
 
         self.regions[n].coastal_adjacency = coastal_adjacency_temp
 
-
-    def generate_river_adjacency(self, region_id, signal = False):
+    def generate_river_adjacency(self, region_id, signal=False) -> NoReturn:
         # self.coastalAdjacency = self.createAdjacencyList()
         n = region_id
         river_adjacency_temp = [0, 0, 0, 0, 0, 0, 0, 0]
