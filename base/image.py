@@ -28,7 +28,7 @@ class WorldmapSprites:
         self.empty_array: ndarray = np.zeros((225, 300, 4))
         self.empty: Image = Image.fromarray(self.empty_array.astype(np.uint8))
 
-        self.COLRS: Colours = Colours(blank_canvas=self.blank_canvas, empty_array=self.empty)
+        self.COLRS: Colours = Colours(blank_canvas=self.blank_canvas, empty_array=self.empty_array)
         self.SPRITES: Sprites = Sprites(empty=self.empty)
 
         # Crop values

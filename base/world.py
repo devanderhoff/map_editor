@@ -12,8 +12,10 @@ from utils.log import get_logger
 class World(QObject):
     world_trigger = pyqtSignal(int)
 
-    def __init__(self, scale):
+    def __init__(self):
         super().__init__()
+
+        self.worldname = 'insert name here'
         self.pixmap_flag = True  # Use pixmaps instead of PIL images.
         self.region_check_queue = []
 
@@ -31,17 +33,18 @@ class World(QObject):
 
         # Sprite related stuff
         self.sprite_generator: WorldmapSprites = WorldmapSprites()
-        self.scale = scale
+        self.scale = (1, 1,)
         self.worldmap_image: Optional[type(Image)] = None  # Hold created full worldmap image.
 
         # self.world_trigger.connect(self.create_region_sprite_signal)
-        self.world_trigger.connect(self.create_region_sprite_signal)
+        # self.world_trigger.connect(self.create_region_sprite_signal)
 
         # Add logger to this class (if it doesn't have one already)
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
-    def create_new_world(self, width, height, random_climate):
+    def create_new_world(self, name, width, height, random_climate):
+        self.name = name
         self.x_width: int = width
         self.y_height: int = height
 
@@ -63,17 +66,25 @@ class World(QObject):
     def load_world(self, filename) -> NoReturn:
         with open(filename, mode='rb') as file:
             self.region_info_lst = list(file.read())
-            self.x_width = self.region_info_lst[0]
-            self.y_height = self.region_info_lst[2]
-            self.nr_regions, self.region_names, self.xy_regions, self.region_info_lst, \
-            self.region_info_slice, self.region_signal_lst = self.create_region_base(loaded_file=True)
-            self.regions = self.create_regions()
-            # self.generate_coastal_adjacency()
-            # self.generate_river_adjacency()
-            self.create_all_region_sprites()
+
+        self.x_width = self.region_info_lst[0]
+        self.y_height = self.region_info_lst[2]
+        self.nr_regions, self.region_names, self.xy_regions, self.region_info_lst, \
+        self.region_info_slice, self.region_signal_lst = self.create_region_base(loaded_file=True)
+        self.regions = self.create_regions()
+        # self.generate_coastal_adjacency()
+        # self.generate_river_adjacency()
+        self.create_all_region_sprites()
+
+    def rebuild_region_list(self):
+        region_list_base = [self.x_width, 0, self.y_height, 0]
+        # for region in self.regions:
+        #     temp = [1, *region.region_list[1:]]
+            # region_list_base.extend(temp)
+        [region_list_base.extend(region.region_list) for region in self.regions]
+        self.region_info_lst = region_list_base
 
     def create_all_region_sprites(self) -> NoReturn:
-        # pool = Pool(processes=int(mp.cpu_count()/2))
         self.logger.debug(f'{self.regions}')
         for region in self.regions:
             self.logger.debug("region.region_id: %d", region.region_id)
@@ -102,11 +113,12 @@ class World(QObject):
             region_information_list = [self.x_width, 0, self.y_height, 0]
             for i in range(nr_regions):
                 n = np.random.randint(0, 8)
-                region_information_list.extend([n, -1, -1, -1, -1])
+                region_information_list.extend([n, 0, 0, 0, 1])
         else:
-            region_information_list = [self.x_width, 0, self.y_height, 0] + ([-1, -1, -1, -1, -1] * nr_regions)
+            region_information_list = [self.x_width, 0, self.y_height, 0] + ([-1, 0, 0, 0, 1] * nr_regions)
         region_information_slice = [*range(4, len(region_information_list), 5)]
-        region_signal_list = [self.world_trigger] * nr_regions
+        # region_signal_list = [self.world_trigger] * nr_regions
+        region_signal_list = [None] * nr_regions
         return nr_regions, region_names, xy_regions, region_information_list, region_information_slice, region_signal_list
 
     def create_regions(self) -> NoReturn:
@@ -131,13 +143,14 @@ class World(QObject):
         return region_list
 
     def create_region_sprite_signal(self, region_id: int) -> NoReturn:
+        self.logger.debug('Region triggered sprite gen = %i', region_id)
         self.create_region_sprite(region_id, signal_flag=True)
 
     def create_region_sprite(self, region_id, signal_flag: bool = False) -> NoReturn:
         self.logger.debug("func create_region_sprite(argument region_id = %d)", region_id)
         region = self.regions[region_id]
-        self.generate_coastal_adjacency(region_id)
-        self.generate_river_adjacency(region_id)
+        self.generate_coastal_adjacency(region_id, signal_flag)
+        self.generate_river_adjacency(region_id, signal_flag)
 
         sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                               region.vegetation_id, region.water_id,
@@ -153,11 +166,11 @@ class World(QObject):
         region.region_changed = True
 
         if signal_flag:
+            # self.logger.debug('Region_id_queue length: ', len(self.region_check_queue))
             for region_id_queue in self.region_check_queue:
-                self.logger.debug('random integer if signal_flag: %d', np.random.randint(100))
                 region = self.regions[region_id_queue]
-                self.generate_river_adjacency(region_id_queue, signal_flag)
-                self.generate_coastal_adjacency(region_id_queue, signal_flag)
+                self.generate_river_adjacency(region_id_queue, not signal_flag)
+                self.generate_coastal_adjacency(region_id_queue, not signal_flag)
                 sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                                       region.vegetation_id, region.water_id,
                                                                       region.world_object_id,
@@ -187,49 +200,49 @@ class World(QObject):
         top_right_id = n - self.x_width + 1
 
         if 0 <= top_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[top_id].region_id)
             if self.regions[top_id].climate_id == 0:
                 coastal_adjacency_temp[0] = 1
 
         if 0 <= top_left_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[top_left_id].region_id)
             if self.regions[top_left_id].climate_id == 0:
                 coastal_adjacency_temp[1] = 1
 
         if 0 <= left_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[left_id].region_id)
             if self.regions[left_id].climate_id == 0:
                 coastal_adjacency_temp[2] = 1
 
         if 0 <= bottom_left_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[bottom_left_id].region_id)
             if self.regions[bottom_left_id].climate_id == 0:
                 coastal_adjacency_temp[3] = 1
 
         if 0 <= bottom_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[bottom_id].region_id)
             if self.regions[bottom_id].climate_id == 0:
                 coastal_adjacency_temp[4] = 1
 
         if 0 <= bottom_right_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[bottom_right_id].region_id)
             if self.regions[bottom_right_id].climate_id == 0:
                 coastal_adjacency_temp[5] = 1
 
         if 0 <= right_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[right_id].region_id)
             if self.regions[right_id].climate_id == 0:
                 coastal_adjacency_temp[6] = 1
 
         if 0 <= top_right_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[top_right_id].region_id)
             if self.regions[top_right_id].climate_id == 0:
                 coastal_adjacency_temp[7] = 1

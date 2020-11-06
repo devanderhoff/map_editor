@@ -1,5 +1,5 @@
 from typing import Optional, List, Any
-
+import time
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsSceneMouseEvent
 from nptyping import NDArray
@@ -14,10 +14,10 @@ class Region(QGraphicsObject):
     # Initialize region information.
     CLIMATES = ("SEA", "CONTINENTAL", "OCEANIC", "MEDITERRANEAN", "TROPICAL", "ARID", "DESERT", "NORDIC",
                 "POLAR", "UNKNOWN",)
-    RELIEF = ("NONE", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS", "UNKNOWN",)
-    VEGETATION = ("NONE", "FOREST", "UNKNOWN",)
-    WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP", "UNKNOWN",)
-    WORLD_OBJECT = ("NONE", "SPAWN", "UNKNOWN",)
+    RELIEF = ("NONE", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS",)
+    VEGETATION = ("NONE", "FOREST", )
+    WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
+    WORLD_OBJECT = ("NONE", "SPAWN",)
 
     trigger = pyqtSignal()
 
@@ -61,6 +61,7 @@ class Region(QGraphicsObject):
 
         # Holds region sprite
         self.region_sprite: RegionPixmap = RegionPixmap(self.trigger)
+        # self.region_sprite = QGraphicsPixmapItem()
         self.region_sprite_loaded: bool = False
 
         self.region_changed: bool = False
@@ -70,8 +71,9 @@ class Region(QGraphicsObject):
 
     def signal_to_climate(self):
         self.logger.debug("Entered function signal_flag to climate_id")
-        self.climate_id = 0
-        self.world_trigger.emit(self.region_id)
+        self.logger.debug(self.region_id)
+        # self.climate_id = 0
+        # self.world_trigger.emit(self.region_id)
 
     def region_xy_to_img_coords(self, image_width, image_height):
         return int(self.x * image_width), int(self.y * image_height)
@@ -142,8 +144,8 @@ class Region(QGraphicsObject):
 
         # self.world_trigger.emit(self.region_id)
 
-    def __repr__(self):
-        return self.climate_str
+    # def __repr__(self):
+    #     return self.climate_str
 
 
 class RegionPixmap(QGraphicsPixmapItem):
@@ -155,7 +157,11 @@ class RegionPixmap(QGraphicsPixmapItem):
 
         self.trigger = trigger
 
-    def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
-        # self.climate_id = 0
+    def clicked_signal(self):
         self.trigger.emit()
-        self.logger.debug("mousePressEvent: %d, %d", self.pos().x(), self.pos().y())
+
+    # def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+    #     # self.climate_id = 0
+    #     self.trigger.emit()
+    #     self.logger.debug("mousePressEvent: %d, %d", self.pos().x(), self.pos().y())
+

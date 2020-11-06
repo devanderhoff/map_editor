@@ -44,7 +44,7 @@ def get_logger(logger_name, level: str = None):
         level = LOG_LEVEL
     logger = logging.getLogger(logger_name)
     logger.addHandler(get_console_handler())
-    logger.addHandler(get_file_handler())
+    # logger.addHandler(get_file_handler())
     logger.propagate = False
     level = level.lower()
     possible_levels = dict(debug=logging.DEBUG, info=logging.INFO,

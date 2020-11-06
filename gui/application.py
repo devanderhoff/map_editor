@@ -2,9 +2,11 @@ from typing import Optional, NoReturn, List, Tuple
 
 from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
-    QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QApplication, QMainWindow, QGraphicsPixmapItem
+    QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QApplication, QMainWindow, QGraphicsPixmapItem, \
+    QFileDialog, QErrorMessage, QMessageBox, QProgressBar, QDialog, QInputDialog
+from PyQt5.QtGui import QTransform
 
-
+from gui.create_new_world_dialog import NewWorldDialog
 from base.world import World
 from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y, _REGION_IMAGE_HEIGHT, _REGION_IMAGE_WIDTH
 from utils.log import get_logger
@@ -14,41 +16,142 @@ class MainApplication(QApplication):
     def __init__(self, argv: List[str]):
         super().__init__(argv)
 
+        self.world_loaded = False
+
+
         self.MainWindow = MainWindow()
         self.MainWindow.setupUi()
 
-        self.graphics_view_map = GraphicView(self.MainWindow.centralwidget)
+        self.graphics_view_map = GraphicsWorldmapView(self.MainWindow.centralwidget)
         self.graphics_view_map.setObjectName("graphicsView")
         self.MainWindow.horizontalLayout.addWidget(self.graphics_view_map)
-        self.graphics_scene_map = GraphicScene()
-
+        self.graphics_scene_map = GraphicsWorldmapScene()
         self.graphics_view_map.setScene(self.graphics_scene_map)
 
-        scale = (1, 1,)
-        self.worldmap = World(scale)
-        self.worldmap.create_new_world(20, 20, True)
+        ## Init gui elements temp ##
+        self.open_file_dialog = QFileDialog()
+        self.open_file_dialog.setAcceptMode(QFileDialog.AcceptOpen)
+
+
+
+        self.save_file_dialog = QFileDialog()
+        self.save_file_dialog.setAcceptMode(QFileDialog.AcceptSave)
+
+
+        # self.save_file_dialog = self.save_file_dialog.getSaveFileName()
+        # self.error = QErrorMessage()
+        self.message_box = QMessageBox()
+
+        self.new_world_ui = NewWorldDialog()
+        self.new_world_ui.ui.spinBox.setMinimum(1)
+        self.new_world_ui.ui.spinBox_2.setMinimum(1)
+
+
+
+
+
+
+
+        ## INITIALIZE ALL SIGNAL CONNECTIONS HERE ##
+        self.MainWindow.actionLoad_world.triggered.connect(self.load_world)
+        self.MainWindow.actionNew_world.triggered.connect(self.new_world)
+        self.MainWindow.actionSave_world.triggered.connect(self.save_world)
+        # self.graphics_scene_map.
+
+
+        ## From here world logic ##
+        # Create world
+        # scale = (1, 1,)
+        self.worldmap = World()
+        # self.worldmap.create_new_world(5, 5, random_climate=True)
         #         # self.worldmap.load_world('./tiny_world.ybin')
 
-        for region in self.worldmap.regions:
-            x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
-            pos = QPoint(x, y)
-            self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
-
-
-
-
+        # for region in self.worldmap.regions:
+        #     x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
+        #     pos = QPoint(x, y)
+        #     self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
 
         self.MainWindow.show()
 
+    def save_world(self):
+        self.save_file_dialog.exec_()
+        filename = self.save_file_dialog.selectedFiles()
+        filename = filename[0]
+
+        if self.save_file_dialog.result() == 1:
+            # self.worldmap.regions[3].world_object_id = 1
+            self.worldmap.rebuild_region_list()
+            if '.ybin' in filename and self.worldmap.region_info_lst:
+                with open(filename, mode='wb') as file:
+
+                    file.write(bytearray(self.worldmap.region_info_lst))
+            elif self.worldmap.region_info_lst:
+                filename = filename + '.ybin'
+                with open(filename, mode='wb') as file:
+                    file.write(bytes(self.worldmap.region_info_lst))
+            else:
+                self.message_box.setText('Something went wrong')
+                self.message_box.setIcon(QMessageBox.Critical)
+                self.message_box.show()
+
+        else:
+            return
+
+    def load_world(self):
+        #!TODO: Reset view after creating a new scene.
+        # self.file_dialog.show()
+        self.open_file_dialog.exec_()
+        filename = self.open_file_dialog.selectedFiles()
+        filename = filename[0]
+
+        if self.open_file_dialog.result() == 1:
+            # self.file_dialog.close()
+            if '.ybin' in filename:
+                self.graphics_scene_map.clear()
+                self.worldmap.regions = []
+                self.worldmap.load_world(filename)
+                scale = (1, 1,)
+                print('imhere')
+                for region in self.worldmap.regions:
+                    x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
+                    pos = QPoint(x, y)
+                    self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
+            else:
+                # self.error.showMessage('You have to load an .ybin world file')
+                self.message_box.setText('You have to load an .ybin world file')
+                self.message_box.setIcon(QMessageBox.Critical)
+                self.message_box.show()
+        else:
+            return
+
+    def new_world(self):
+        # !TODO: Reset view after creating a new scene.
+        self.new_world_ui.exec_()
+        if self.new_world_ui.result() == 0:
+            return
+        elif self.new_world_ui.result() == 1:
+            width = self.new_world_ui.ui.spinBox.value()
+            height = self.new_world_ui.ui.spinBox_2.value()
+            name = self.new_world_ui.ui.lineEdit.text()
+            random_climate = self.new_world_ui.ui.checkBox.isChecked()
+
+            self.worldmap.regions = []
+            self.graphics_scene_map.clear()
+            self.worldmap.create_new_world(name, width, height, random_climate=random_climate)
+            scale = (1, 1,)
+            for region in self.worldmap.regions:
+                x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
+                pos = QPoint(x, y)
+                self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
+
+        # width, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
+        # height, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
+        # print(width)
+        # print(height)
+        #
 
 
-
-
-
-
-
-
-class GraphicView(QGraphicsView):
+class GraphicsWorldmapView(QGraphicsView):
     def __init__(self, widget):
         super().__init__(widget)
 
@@ -73,7 +176,7 @@ class GraphicView(QGraphicsView):
         else:
             self._zoom = 0
 
-class GraphicScene(QGraphicsScene):
+class GraphicsWorldmapScene(QGraphicsScene):
     def __init__(self):
         super().__init__()
 
@@ -84,6 +187,10 @@ class GraphicScene(QGraphicsScene):
     def create_scene_items_from_world(self, item: QGraphicsPixmapItem, pos: QPoint):
         self.addItem(item)
         item.setPos(pos)
+
+    def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+        item = self.itemAt(event.scenePos(), QTransform())
+        item.clicked_signal()
 
 
 class MainWindow(QMainWindow):
@@ -121,9 +228,13 @@ class MainWindow(QMainWindow):
         self.actionLoad_world.setObjectName("actionLoad_world")
         self.actionSave_world = QAction(self)
         self.actionSave_world.setObjectName("actionSave_world")
+        self.actionNew_world = QAction(self)
+        self.actionNew_world.setObjectName("actionNew_world")
 
+        self.menuFile.addAction(self.actionNew_world)
         self.menuFile.addAction(self.actionLoad_world)
         self.menuFile.addAction(self.actionSave_world)
+
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi()
@@ -135,5 +246,6 @@ class MainWindow(QMainWindow):
         self.pushButton_2.setText(_translate("MainWindow", "PushButton"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.actionLoad_world.setText(_translate("MainWindow", "Load base"))
-        self.actionSave_world.setText(_translate("MainWindow", "Save base"))
+        self.actionLoad_world.setText(_translate("MainWindow", "Load world"))
+        self.actionSave_world.setText(_translate("MainWindow", "Save world"))
+        self.actionNew_world.setText(_translate("MainWindow", "New world"))
