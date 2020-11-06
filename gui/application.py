@@ -1,27 +1,32 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QMainWindow, QWidget, \
-    QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QGraphicsPixmapItem, QGraphicsSceneMouseEvent
-from PyQt5.QtCore import Qt, QPointF, QRect, QMetaObject, QCoreApplication
-from world import World
-from PyQt5.QtGui import QPixmap
-import numpy as np
-from PIL import Image, ImageQt
+from typing import Optional, NoReturn
+
+from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
+    QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction
+
+from base.world import World
+from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y
+from utils.log import get_logger
 
 
 class GraphicView(QGraphicsView):
     def __init__(self, widget):
         super().__init__(widget)
 
+        # Add logger to this class (if it doesn't have one already)
+        if not hasattr(self, 'logger'):
+            self.logger = get_logger(__class__.__name__)
+
         self._zoom = 0
         self.setScene(GraphicScene())
         self.scale(0.3, 0.3)
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event) -> NoReturn:
         if event.angleDelta().y() > 0:
             factor = 1.25
             self._zoom += 1
         else:
-            factor=0.8
+            factor = 0.8
             self._zoom -= 1
 
         if self._zoom > 0:
@@ -35,15 +40,21 @@ class GraphicView(QGraphicsView):
     #     print('viewer', event.pos().x())
 
 
-
-
 class GraphicScene(QGraphicsScene):
-    def __init__(self):
+    def __init__(self, world_size_x: Optional[int] = None, world_size_y: Optional[int] = None):
         super().__init__()
+
+        # Add logger to this class (if it doesn't have one already)
+        if not hasattr(self, 'logger'):
+            self.logger = get_logger(__class__.__name__)
+
+        # Set default base size
+        self.world_sz_x = world_size_x if world_size_x else DEFAULT_WRLD_SZ_X
+        self.world_sz_y = world_size_y if world_size_y else DEFAULT_WRLD_SZ_Y
 
         scale = (1, 1,)
         self.worldmap = World(scale)
-        self.worldmap.create_new_world(125, 80, True)
+        self.worldmap.create_new_world(self.world_sz_x, self.world_sz_y, True)
         #         # self.worldmap.load_world('./tiny_world.ybin')
         for n, region in enumerate(self.worldmap.regions):
             #
@@ -74,7 +85,8 @@ class GraphicScene(QGraphicsScene):
 
 
 class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
+
+    def setupUi(self, MainWindow) -> NoReturn:
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(927, 716)
         self.centralwidget = QWidget(MainWindow)
@@ -113,22 +125,11 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QMetaObject.connectSlotsByName(MainWindow)
 
-    def retranslateUi(self, MainWindow):
+    def retranslateUi(self, MainWindow) -> NoReturn:
         _translate = QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.pushButton_2.setText(_translate("MainWindow", "PushButton"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.actionLoad_world.setText(_translate("MainWindow", "Load world"))
-        self.actionSave_world.setText(_translate("MainWindow", "Save world"))
-
-
-if __name__ == "__main__":
-    import sys
-
-    app = QApplication(sys.argv)
-    MainWindow = QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
+        self.actionLoad_world.setText(_translate("MainWindow", "Load base"))
+        self.actionSave_world.setText(_translate("MainWindow", "Save base"))
