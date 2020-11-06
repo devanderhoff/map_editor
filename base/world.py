@@ -24,16 +24,13 @@ class World(QObject):
         self.xy_regions: Optional[Tuple[int, int]] = None  # x and y coordinates of the region. (0,0) is top left.
         self.region_info_lst: Optional[
             List[Any]] = None  # List containing region information, climate_id, water_id etc.
-        self.region_info_slice: Optional[
-            slice] = None  # Start location to splice region information list into region info.
+        self.region_info_slice: Optional[List[int]] = None  # Start location to splice region information list.
         self.regions = None  # Contains region objects which hold region info.
         self.region_signal_lst: Optional[
             List[pyqtSignal]] = None  # list containing copies of the PyQt signal_flag to be send to region during init
 
         # Sprite related stuff
         self.sprite_generator: WorldmapSprites = WorldmapSprites()
-        self._REGION_IMAGE_WIDTH: int = 300
-        self._REGION_IMAGE_HEIGHT: int = 225
         self.scale = scale
         self.worldmap_image: Optional[type(Image)] = None  # Hold created full worldmap image.
 
@@ -114,11 +111,11 @@ class World(QObject):
 
     def create_regions(self) -> NoReturn:
         climate_id_list = [self.region_info_lst[idx] for idx in self.region_info_slice]
-        relief_id_list = [self.region_info_lst[idx + 1] for idx in (self.region_info_slice)]
-        vegetation_id_list = [self.region_info_lst[idx + 2] for idx in (self.region_info_slice)]
-        water_id_list = [self.region_info_lst[idx + 3] for idx in (self.region_info_slice)]
-        worldobject_id_list = [self.region_info_lst[idx + 4] for idx in (self.region_info_slice)]
-        region_bytes = [self.region_info_lst[idx:idx + 5] for idx in (self.region_info_slice)]
+        relief_id_list = [self.region_info_lst[idx + 1] for idx in self.region_info_slice]
+        vegetation_id_list = [self.region_info_lst[idx + 2] for idx in self.region_info_slice]
+        water_id_list = [self.region_info_lst[idx + 3] for idx in self.region_info_slice]
+        worldobject_id_list = [self.region_info_lst[idx + 4] for idx in self.region_info_slice]
+        region_bytes = [self.region_info_lst[idx:idx + 5] for idx in self.region_info_slice]
 
         self.logger.debug('create_regions says: test')
         region_list = [

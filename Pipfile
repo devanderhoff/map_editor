@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pillow = "*"
+pyqt5 = "*"
+nptyping = "*"
+toml = "*"
+pyqt5-stubs = "==5.14.2.2"
+numpy = "==1.19.3"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8.6"

@@ -4,6 +4,8 @@ from pathlib import Path
 
 DEFAULT_WRLD_SZ_X = 10
 DEFAULT_WRLD_SZ_Y = 10
+_REGION_IMAGE_WIDTH = 300
+_REGION_IMAGE_HEIGHT = 225
 
 #  Directories/paths
 PROJECT_ROOT = Path(__file__).parent.resolve()

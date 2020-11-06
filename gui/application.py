@@ -1,12 +1,51 @@
-from typing import Optional, NoReturn
+from typing import Optional, NoReturn, List, Tuple
 
-from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication
+from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
-    QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction
+    QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QApplication, QMainWindow, QGraphicsPixmapItem
+
 
 from base.world import World
-from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y
+from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y, _REGION_IMAGE_HEIGHT, _REGION_IMAGE_WIDTH
 from utils.log import get_logger
+
+
+class MainApplication(QApplication):
+    def __init__(self, argv: List[str]):
+        super().__init__(argv)
+
+        self.MainWindow = MainWindow()
+        self.MainWindow.setupUi()
+
+        self.graphics_view_map = GraphicView(self.MainWindow.centralwidget)
+        self.graphics_view_map.setObjectName("graphicsView")
+        self.MainWindow.horizontalLayout.addWidget(self.graphics_view_map)
+        self.graphics_scene_map = GraphicScene()
+
+        self.graphics_view_map.setScene(self.graphics_scene_map)
+
+        scale = (1, 1,)
+        self.worldmap = World(scale)
+        self.worldmap.create_new_world(20, 20, True)
+        #         # self.worldmap.load_world('./tiny_world.ybin')
+
+        for region in self.worldmap.regions:
+            x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
+            pos = QPoint(x, y)
+            self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
+
+
+
+
+
+        self.MainWindow.show()
+
+
+
+
+
+
+
 
 
 class GraphicView(QGraphicsView):
@@ -18,7 +57,6 @@ class GraphicView(QGraphicsView):
             self.logger = get_logger(__class__.__name__)
 
         self._zoom = 0
-        self.setScene(GraphicScene())
         self.scale(0.3, 0.3)
 
     def wheelEvent(self, event) -> NoReturn:
@@ -28,7 +66,6 @@ class GraphicView(QGraphicsView):
         else:
             factor = 0.8
             self._zoom -= 1
-
         if self._zoom > 0:
             self.scale(factor, factor)
         elif self._zoom < 0:
@@ -36,66 +73,28 @@ class GraphicView(QGraphicsView):
         else:
             self._zoom = 0
 
-    # def mousePressEvent(self, event):
-    #     print('viewer', event.pos().x())
-
-
 class GraphicScene(QGraphicsScene):
-    def __init__(self, world_size_x: Optional[int] = None, world_size_y: Optional[int] = None):
+    def __init__(self):
         super().__init__()
 
         # Add logger to this class (if it doesn't have one already)
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
-        # Set default base size
-        self.world_sz_x = world_size_x if world_size_x else DEFAULT_WRLD_SZ_X
-        self.world_sz_y = world_size_y if world_size_y else DEFAULT_WRLD_SZ_Y
-
-        scale = (1, 1,)
-        self.worldmap = World(scale)
-        self.worldmap.create_new_world(self.world_sz_x, self.world_sz_y, True)
-        #         # self.worldmap.load_world('./tiny_world.ybin')
-        for n, region in enumerate(self.worldmap.regions):
-            #
-            # pixmap = QPixmap.fromImage(region.region_sprite)
-            # region.setPixmap(pixmap)
-            # # item = QGraphicsPixmapItem(pixmap)
-            self.addItem(region.region_sprite)
-
-            x, y = region.region_xy_to_scene_coords(self.worldmap._REGION_IMAGE_WIDTH * scale[0],
-                                                    self.worldmap._REGION_IMAGE_HEIGHT * scale[1])
-            pos = QPointF(x, y)
-            region.region_sprite.setPos(region.mapToScene(pos))
-
-    # def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
-    #     for region in self.worldmap.regions:
-    #         if region.region_changed:
-    #             self.worldmap.create_region_sprite(region)
-    #             pixmap = QPixmap.fromImage(region.region_sprite)
-    #             region.setPixmap(pixmap)
-    #     n = np.random.randint(0, len(self.worldmap.regions))
-    #     item = self.graphicsView.items()[n]
-    #     image_array = np.ones((225, 300, 4)) * 155
-    #     image = Image.fromarray(image_array.astype(np.uint8))
-    #     image_pix = ImageQt.ImageQt(image)
-    #
-    #     pixmap = QPixmap.fromImage(image_pix)
-    #     item.setPixmap(pixmap)
+    def create_scene_items_from_world(self, item: QGraphicsPixmapItem, pos: QPoint):
+        self.addItem(item)
+        item.setPos(pos)
 
 
-class Ui_MainWindow(object):
-
-    def setupUi(self, MainWindow) -> NoReturn:
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(927, 716)
-        self.centralwidget = QWidget(MainWindow)
+class MainWindow(QMainWindow):
+    def setupUi(self) -> NoReturn:
+        self.setObjectName("MainWindow")
+        self.resize(927, 716)
+        self.centralwidget = QWidget()
         self.centralwidget.setObjectName("centralwidget")
+
         self.horizontalLayout = QHBoxLayout(self.centralwidget)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.graphicsView = GraphicView(self.centralwidget)
-        self.graphicsView.setObjectName("graphicsView")
-        self.horizontalLayout.addWidget(self.graphicsView)
 
         self.pushButton_2 = QPushButton(self.centralwidget)
         self.pushButton_2.setObjectName("pushButton_2")
@@ -104,30 +103,35 @@ class Ui_MainWindow(object):
         self.pushButton = QPushButton(self.centralwidget)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QMenuBar(MainWindow)
+
+        self.setCentralWidget(self.centralwidget)
+
+        self.menubar = QMenuBar(self)
         self.menubar.setGeometry(QRect(0, 0, 927, 21))
         self.menubar.setObjectName("menubar")
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(MainWindow)
+        self.setMenuBar(self.menubar)
+
+        self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-        self.actionLoad_world = QAction(MainWindow)
+        self.setStatusBar(self.statusbar)
+
+        self.actionLoad_world = QAction(self)
         self.actionLoad_world.setObjectName("actionLoad_world")
-        self.actionSave_world = QAction(MainWindow)
+        self.actionSave_world = QAction(self)
         self.actionSave_world.setObjectName("actionSave_world")
+
         self.menuFile.addAction(self.actionLoad_world)
         self.menuFile.addAction(self.actionSave_world)
         self.menubar.addAction(self.menuFile.menuAction())
 
-        self.retranslateUi(MainWindow)
-        QMetaObject.connectSlotsByName(MainWindow)
+        self.retranslateUi()
+        # QMetaObject.connectSlotsByName(self)
 
-    def retranslateUi(self, MainWindow) -> NoReturn:
+    def retranslateUi(self) -> NoReturn:
         _translate = QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.pushButton_2.setText(_translate("MainWindow", "PushButton"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
