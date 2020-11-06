@@ -15,6 +15,7 @@ class GraphicView(QGraphicsView):
         self._zoom = 0
         self.setScene(GraphicScene())
         self.scale(0.3, 0.3)
+        self.signal_down = None
 
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
@@ -31,10 +32,8 @@ class GraphicView(QGraphicsView):
         else:
             self._zoom = 0
 
-    # def mousePressEvent(self, event):
-    #     print('viewer', event.pos().x())
-
-
+    # def signal_connect(self, handle):
+        
 
 
 class GraphicScene(QGraphicsScene):
@@ -43,7 +42,7 @@ class GraphicScene(QGraphicsScene):
 
         scale = (1, 1,)
         self.worldmap = World(scale)
-        self.worldmap.create_new_world(125, 80, True)
+        self.worldmap.create_new_world(10, 10, True)
         #         # self.worldmap.load_world('./tiny_world.ybin')
         for n, region in enumerate(self.worldmap.regions):
             #
@@ -56,6 +55,8 @@ class GraphicScene(QGraphicsScene):
                                                     self.worldmap._REGION_IMAGE_HEIGHT * scale[1])
             pos = QPointF(x, y)
             region.region_sprite.setPos(region.mapToScene(pos))
+    # def test:
+    #     print('test')
 
     # def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
     #     for region in self.worldmap.regions:
@@ -88,6 +89,7 @@ class Ui_MainWindow(object):
         self.pushButton_2 = QPushButton(self.centralwidget)
         self.pushButton_2.setObjectName("pushButton_2")
         self.horizontalLayout.addWidget(self.pushButton_2)
+        self.pushButton_2.pressed.connect(name='setbrush')
 
         self.pushButton = QPushButton(self.centralwidget)
         self.pushButton.setObjectName("pushButton")

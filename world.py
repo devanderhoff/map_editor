@@ -70,12 +70,12 @@ class World(QObject):
 
 
     def create_all_region_sprites(self):
-        pool = Pool(processes=int(mp.cpu_count()/2))
+        # pool = Pool(processes=int(mp.cpu_count()/2))
         print(self.regions)
         for region in self.regions:
             print(region.region_id)
-            pool.apply(self.create_region_sprite, args=(region.region_id,))
-            # self.create_region_sprite(region.region_id)
+            # pool.apply(self.create_region_sprite, args=(region.region_id,))
+            self.create_region_sprite(region.region_id, False)
 
     def create_world_image(self):
         total_image_width = self._REGION_IMAGE_WIDTH * self.x_width
@@ -130,8 +130,8 @@ class World(QObject):
     def create_region_sprite(self, region_id, signal=False):
         print(region_id)
         region = self.regions[region_id]
-        self.generate_coastal_adjacency(region_id)
-        self.generate_river_adjacency(region_id)
+        self.generate_coastal_adjacency(region_id, signal)
+        self.generate_river_adjacency(region_id, signal)
 
         sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                                   region.vegetation_id, region.water_id,
@@ -145,13 +145,14 @@ class World(QObject):
         else:
             region.region_sprite(sprite)
         region.region_changed = True
+        print(len(self.region_check_queue))
 
         if signal:
             for region_id_queue in self.region_check_queue:
                 print(np.random.randint(100))
                 region = self.regions[region_id_queue]
-                self.generate_river_adjacency(region_id_queue, signal)
-                self.generate_coastal_adjacency(region_id_queue, signal)
+                self.generate_river_adjacency(region_id_queue, not signal)
+                self.generate_coastal_adjacency(region_id_queue, not signal)
                 sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                                       region.vegetation_id, region.water_id,
                                                                       region.world_object_id,
@@ -166,7 +167,7 @@ class World(QObject):
 
             self.region_check_queue = []
 
-    def generate_coastal_adjacency(self, region_id, signal = False):
+    def generate_coastal_adjacency(self, region_id, signal=False):
         # region = self.regions[region_id]
         n = region_id
 
@@ -180,50 +181,51 @@ class World(QObject):
         right_id = n + 1
         top_right_id = n - self.x_width + 1
 
+
         if 0 <= top_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[top_id].region_id)
             if self.regions[top_id].climate_id == 0:
                 coastal_adjacency_temp[0] = 1
 
         if 0 <= top_left_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[top_left_id].region_id)
             if self.regions[top_left_id].climate_id == 0:
                 coastal_adjacency_temp[1] = 1
 
         if 0 <= left_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[left_id].region_id)
             if self.regions[left_id].climate_id == 0:
                 coastal_adjacency_temp[2] = 1
 
         if 0 <= bottom_left_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[bottom_left_id].region_id)
             if self.regions[bottom_left_id].climate_id == 0:
                 coastal_adjacency_temp[3] = 1
 
         if 0 <= bottom_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[bottom_id].region_id)
             if self.regions[bottom_id].climate_id == 0:
                 coastal_adjacency_temp[4] = 1
 
         if 0 <= bottom_right_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[bottom_right_id].region_id)
             if self.regions[bottom_right_id].climate_id == 0:
                 coastal_adjacency_temp[5] = 1
 
         if 0 <= right_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[right_id].region_id)
             if self.regions[right_id].climate_id == 0:
                 coastal_adjacency_temp[6] = 1
 
         if 0 <= top_right_id < self.nr_regions:
-            if not signal:
+            if signal:
                 self.region_check_queue.append(self.regions[top_right_id].region_id)
             if self.regions[top_right_id].climate_id == 0:
                 coastal_adjacency_temp[7] = 1

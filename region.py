@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsSceneMouseEvent
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QMouseEvent
-
+import numpy as np
 
 class Region(QGraphicsObject):
     """
@@ -59,10 +59,16 @@ class Region(QGraphicsObject):
 
         self.trigger.connect(self.signal_to_climate)
 
+    @pyqtSlot(name='setbrush')
+    def set_brush(self):
+        print('brush is set with value')
 
     def signal_to_climate(self):
         print('i am in signal to climate')
-        self.climate_id = 0
+        self.climate_id = np.random.randint(0, 8)
+        self.relief_id = np.random.randint(0, 4)
+        self.vegetation_id = np.random.randint(0, 2)
+        self.water_id = np.random.randint(2, 6)
         self.world_trigger.emit(self.region_id)
 
     def region_xy_to_img_coords(self, image_width, image_height):
