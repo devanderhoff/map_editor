@@ -1,30 +1,32 @@
-from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsItem
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject
+
+from utils.log import get_logger
 
 
 class Foo(QGraphicsPixmapItem, QGraphicsObject):
-    # Define a new signal called 'trigger' that has no arguments.
-    trigger = pyqtSignal()
+    # Define a new signal_flag called 'trigger' that has no arguments.
+    trigger: pyqtSignal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
         # self.setPixmap()
 
+        if not self.hasattr('logger'):
+            self.logger = get_logger(__class__.__name__)
+
     def connect_and_emit_trigger(self):
-        # Connect the trigger signal to a slot.
+        # Connect the trigger signal_flag to a slot.
         self.trigger.connect(self.handle_trigger)
 
-        # Emit the signal.
+        # Emit the signal_flag.
         self.trigger.emit()
         # self.setPixmap()
 
     def handle_trigger(self):
         # Show that the slot has been called.
 
-        print("trigger signal received")
-
-
+        self.logger.debug("Trigger signal_flag received...")
 
 
 if __name__ == "__main__":

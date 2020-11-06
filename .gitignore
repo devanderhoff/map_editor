@@ -1,2 +1,4 @@
-/venv/
 /.idea/
+/logfile.log
+/.pyenv/
+/pyenv/

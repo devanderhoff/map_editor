@@ -9,13 +9,13 @@
 
 from PIL import Image, ImageQt
 from PyQt5 import QtCore, QtGui, QtWidgets
-from world import World
+from base import World
 import numpy as np
 
 
 class Ui_MainWindow(object):
     def __init__(self):
-        self.worldmap = World()
+        self.worldmap = World(scale=1)
         # self.worldmap.load_world('./tiny_world.ybin')
         # self.worldmap.create_world_image()
         self.worldmap.create_new_world(10, 10, True)
@@ -73,8 +73,8 @@ class Ui_MainWindow(object):
         self.pushButton_2.setText(_translate("MainWindow", "PushButton"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.actionLoad_world.setText(_translate("MainWindow", "Load world"))
-        self.actionSave_world.setText(_translate("MainWindow", "Save world"))
+        self.actionLoad_world.setText(_translate("MainWindow", "Load base"))
+        self.actionSave_world.setText(_translate("MainWindow", "Save base"))
 
 
 
