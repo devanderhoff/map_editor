@@ -159,11 +159,19 @@ class World(QObject):
                                                               region.river_adjacency,
                                                               self.pixmap_flag,
                                                               self.scale)
+
         if self.pixmap_flag:
-            region.region_sprite.setPixmap(sprite)
+            region.setPixmap(sprite)
         else:
             region.region_sprite(sprite)
         region.region_changed = True
+
+
+        # if self.pixmap_flag:
+        #     region.region_sprite.setPixmap(sprite)
+        # else:
+        #     region.region_sprite(sprite)
+        # region.region_changed = True
 
         if signal_flag:
             # self.logger.debug('Region_id_queue length: ', len(self.region_check_queue))
@@ -178,11 +186,14 @@ class World(QObject):
                                                                       region.river_adjacency,
                                                                       self.pixmap_flag,
                                                                       self.scale)
+                # if self.pixmap_flag:
+                #     region.region_sprite.setPixmap(sprite)
+                # else:
+                #     region.region_sprite(sprite)
                 if self.pixmap_flag:
-                    region.region_sprite.setPixmap(sprite)
+                    region.setPixmap(sprite)
                 else:
                     region.region_sprite(sprite)
-
             self.region_check_queue = []
 
     def generate_coastal_adjacency(self, region_id: int, signal: bool = False) -> NoReturn:

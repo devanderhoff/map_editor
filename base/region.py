@@ -7,7 +7,7 @@ from nptyping import NDArray
 from utils.log import get_logger
 
 
-class Region(QGraphicsObject):
+class Region(QGraphicsPixmapItem):
     """
     Region class that holds all region (tile) data.
     """
@@ -19,7 +19,7 @@ class Region(QGraphicsObject):
     WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
     WORLD_OBJECT = ("NONE", "SPAWN",)
 
-    trigger = pyqtSignal()
+    # trigger = pyqtSignal()
 
     def __init__(self, x: int, y: int, region_list: List[int], name: str, region_id: int, climate_id: int,
                  relief_id: int, vegetation_id: int, water_id: int, worldobject_id: int, signal: pyqtSignal):
@@ -60,14 +60,14 @@ class Region(QGraphicsObject):
         self.river_adjacency: Optional[NDArray[3, 3, bool]] = None
 
         # Holds region sprite
-        self.region_sprite: RegionPixmap = RegionPixmap(self.trigger)
+        # self.region_sprite: RegionPixmap = RegionPixmap(self.trigger)
         # self.region_sprite = QGraphicsPixmapItem()
         self.region_sprite_loaded: bool = False
 
         self.region_changed: bool = False
         self.world_trigger: pyqtSignal = signal
 
-        self.trigger.connect(self.signal_to_climate)
+        # self.trigger.connect(self.signal_to_climate)
 
     def signal_to_climate(self):
         self.logger.debug("Entered function signal_flag to climate_id")

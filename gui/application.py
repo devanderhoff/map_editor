@@ -1,6 +1,6 @@
 from typing import Optional, NoReturn, List, Tuple
 
-from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint
+from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
     QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QApplication, QMainWindow, QGraphicsPixmapItem, \
     QFileDialog, QErrorMessage, QMessageBox, QProgressBar, QDialog, QInputDialog
@@ -8,16 +8,23 @@ from PyQt5.QtGui import QTransform
 
 from gui.create_new_world_dialog import NewWorldDialog
 from base.world import World
+from base.region import Region
 from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y, _REGION_IMAGE_HEIGHT, _REGION_IMAGE_WIDTH
 from utils.log import get_logger
+from gui.signal_slots import SignalSlot
 
 
-class MainApplication(QApplication):
+class MainApplication(QApplication, SignalSlot):
+    recreate_sprite = pyqtSignal(int)
+
     def __init__(self, argv: List[str]):
         super().__init__(argv)
+        # self.signalslots = SignalSlot()
+
+        self.paint_climate = 0
+        self.paint_relief = 0
 
         self.world_loaded = False
-
 
         self.MainWindow = MainWindow()
         self.MainWindow.setupUi()
@@ -25,19 +32,25 @@ class MainApplication(QApplication):
         self.graphics_view_map = GraphicsWorldmapView(self.MainWindow.centralwidget)
         self.graphics_view_map.setObjectName("graphicsView")
         self.MainWindow.horizontalLayout.addWidget(self.graphics_view_map)
-        self.graphics_scene_map = GraphicsWorldmapScene()
+        self.graphics_scene_map = GraphicsWorldmapScene(self.recreate_sprite)
         self.graphics_view_map.setScene(self.graphics_scene_map)
 
         ## Init gui elements temp ##
         self.open_file_dialog = QFileDialog()
         self.open_file_dialog.setAcceptMode(QFileDialog.AcceptOpen)
 
-
-
         self.save_file_dialog = QFileDialog()
         self.save_file_dialog.setAcceptMode(QFileDialog.AcceptSave)
 
-
+        self.MainWindow.pushButton.pressed.connect(self.press_climate_button)
+        self.MainWindow.pushButton_2.pressed.connect(self.press_climate_button_2)
+        self.MainWindow.pushButton_3.pressed.connect(self.press_climate_button_3)
+        self.MainWindow.pushButton_4.pressed.connect(self.press_climate_button_4)
+        self.MainWindow.pushButton_5.pressed.connect(self.press_climate_button_5)
+        self.MainWindow.pushButton_6.pressed.connect(self.press_climate_button_6)
+        self.MainWindow.pushButton_7.pressed.connect(self.press_climate_button_7)
+        self.MainWindow.pushButton_8.pressed.connect(self.press_climate_button_8)
+        self.MainWindow.pushButton_9.pressed.connect(self.press_climate_button_9)
         # self.save_file_dialog = self.save_file_dialog.getSaveFileName()
         # self.error = QErrorMessage()
         self.message_box = QMessageBox()
@@ -46,18 +59,12 @@ class MainApplication(QApplication):
         self.new_world_ui.ui.spinBox.setMinimum(1)
         self.new_world_ui.ui.spinBox_2.setMinimum(1)
 
-
-
-
-
-
-
         ## INITIALIZE ALL SIGNAL CONNECTIONS HERE ##
         self.MainWindow.actionLoad_world.triggered.connect(self.load_world)
         self.MainWindow.actionNew_world.triggered.connect(self.new_world)
         self.MainWindow.actionSave_world.triggered.connect(self.save_world)
+        self.recreate_sprite.connect(self.recreate_sprite_slot)
         # self.graphics_scene_map.
-
 
         ## From here world logic ##
         # Create world
@@ -72,6 +79,10 @@ class MainApplication(QApplication):
         #     self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
 
         self.MainWindow.show()
+
+    def recreate_sprite_slot(self, region_id):
+        self.worldmap.regions[region_id].climate_id = self.paint_climate
+        self.worldmap.create_region_sprite(region_id, True)
 
     def save_world(self):
         self.save_file_dialog.exec_()
@@ -98,7 +109,7 @@ class MainApplication(QApplication):
             return
 
     def load_world(self):
-        #!TODO: Reset view after creating a new scene.
+        # !TODO: Reset view after creating a new scene.
         # self.file_dialog.show()
         self.open_file_dialog.exec_()
         filename = self.open_file_dialog.selectedFiles()
@@ -111,11 +122,11 @@ class MainApplication(QApplication):
                 self.worldmap.regions = []
                 self.worldmap.load_world(filename)
                 scale = (1, 1,)
-                print('imhere')
                 for region in self.worldmap.regions:
-                    x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
+                    x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0],
+                                                            _REGION_IMAGE_HEIGHT * scale[1])
                     pos = QPoint(x, y)
-                    self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
+                    self.graphics_scene_map.create_scene_items_from_world(region, pos)
             else:
                 # self.error.showMessage('You have to load an .ybin world file')
                 self.message_box.setText('You have to load an .ybin world file')
@@ -142,7 +153,7 @@ class MainApplication(QApplication):
             for region in self.worldmap.regions:
                 x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
                 pos = QPoint(x, y)
-                self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
+                self.graphics_scene_map.create_scene_items_from_world(region, pos)
 
         # width, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
         # height, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
@@ -176,10 +187,12 @@ class GraphicsWorldmapView(QGraphicsView):
         else:
             self._zoom = 0
 
+
 class GraphicsWorldmapScene(QGraphicsScene):
-    def __init__(self):
+    def __init__(self, signal):
         super().__init__()
 
+        self.recreate_sprite = signal
         # Add logger to this class (if it doesn't have one already)
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
@@ -190,7 +203,10 @@ class GraphicsWorldmapScene(QGraphicsScene):
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         item = self.itemAt(event.scenePos(), QTransform())
-        item.clicked_signal()
+        if isinstance(item, Region):
+            self.recreate_sprite.emit(item.region_id)
+
+    # item.clicked_signal()
 
 
 class MainWindow(QMainWindow):
@@ -203,13 +219,44 @@ class MainWindow(QMainWindow):
         self.horizontalLayout = QHBoxLayout(self.centralwidget)
         self.horizontalLayout.setObjectName("horizontalLayout")
 
+        self.pushButton = QPushButton(self.centralwidget)
+        self.pushButton.setObjectName("pushButton")
+        self.horizontalLayout.addWidget(self.pushButton)
+
         self.pushButton_2 = QPushButton(self.centralwidget)
         self.pushButton_2.setObjectName("pushButton_2")
         self.horizontalLayout.addWidget(self.pushButton_2)
 
-        self.pushButton = QPushButton(self.centralwidget)
-        self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout.addWidget(self.pushButton)
+        self.pushButton_3 = QPushButton(self.centralwidget)
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.horizontalLayout.addWidget(self.pushButton_3)
+
+        self.pushButton_4 = QPushButton(self.centralwidget)
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.horizontalLayout.addWidget(self.pushButton_4)
+
+        self.pushButton_5 = QPushButton(self.centralwidget)
+        self.pushButton_5.setObjectName("pushButton_5")
+        self.horizontalLayout.addWidget(self.pushButton_5)
+
+        self.pushButton_6 = QPushButton(self.centralwidget)
+        self.pushButton_6.setObjectName("pushButton_6")
+        self.horizontalLayout.addWidget(self.pushButton_6)
+
+        self.pushButton_7 = QPushButton(self.centralwidget)
+        self.pushButton_7.setObjectName("pushButton_7")
+        self.horizontalLayout.addWidget(self.pushButton_7)
+
+        self.pushButton_8 = QPushButton(self.centralwidget)
+        self.pushButton_8.setObjectName("pushButton_8")
+        self.horizontalLayout.addWidget(self.pushButton_8)
+
+        self.pushButton_9 = QPushButton(self.centralwidget)
+        self.pushButton_9.setObjectName("pushButton_9")
+        self.horizontalLayout.addWidget(self.pushButton_9)
+
+
+
 
         self.setCentralWidget(self.centralwidget)
 
