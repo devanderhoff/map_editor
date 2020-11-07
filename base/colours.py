@@ -23,7 +23,7 @@ class Colours:
     COLOUR_DESERT: ndarray = np.array([187, 169, 132, 255])
     COLOUR_NORDIC: ndarray = np.array([120, 156, 101, 255])
     COLOUR_POLAR: ndarray = np.array([190, 190, 190, 255])
-    COLOUR_GREY: ndarray = np.array([45, 45, 45, 255])
+    COLOUR_GREY: ndarray = np.array([200, 200, 200, 255])
 
     COLOUR_SEA_ARR: Optional[ndarray] = None
     COLOUR_CONT_ARR: Optional[ndarray] = None

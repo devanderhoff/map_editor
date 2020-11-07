@@ -45,6 +45,7 @@ class WorldmapSprites:
                                world_object_id: int, coastal_adjacency: List[int], river_adjacency: List[int],
                                pixmap_flag: bool = True, scale: Union[int, float] = 1) -> type(Image):
         # Background first
+        # scale = (0.5, 0.5,)
         background, flag_ground = self.select_background(climate_id)
         if climate_id != 0:
             relief, flag_relief = self.select_relief_sprite(relief_id)
@@ -91,6 +92,7 @@ class WorldmapSprites:
 
         background_image.thumbnail((background_image.size[0] * scale[0], background_image.size[1] * scale[1],),
                                    Image.ANTIALIAS)
+
         if pixmap_flag:
             background_image = ImageQt.ImageQt(background_image)
             background_image = QPixmap.fromImage(background_image)
@@ -115,78 +117,78 @@ class WorldmapSprites:
             if vegetation_id == 0 and (relief_id == 0 or relief_id == 1):
                 i = np.random.randint(0, 10)
                 if i >= tree_chance:
-                    vegetation_sprite = self.SPRITES.cont_trees
+                    vegetation_sprite = self.SPRITES.sprite_cont_trees
                     vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 else:
                     vegetation_sprite = self.empty
                 flag_found = True
             elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.cont_forest
+                vegetation_sprite = self.SPRITES.sprite_cont_forest
                 vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 flag_found = True
         elif climate_id == 2:
             if vegetation_id == 0 and (relief_id == 0 or relief_id == 1):
                 i = np.random.randint(0, 10)
                 if i >= tree_chance:
-                    vegetation_sprite = self.SPRITES.oceanic_trees
+                    vegetation_sprite = self.SPRITES.sprite_oceanic_trees
                     vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 else:
                     vegetation_sprite = self.empty
                 flag_found = True
             elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.oceanic_forest
+                vegetation_sprite = self.SPRITES.sprite_oceanic_forest
                 vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 flag_found = True
         elif climate_id == 3:
             if vegetation_id == 0 and (relief_id == 0 or relief_id == 1):
                 i = np.random.randint(0, 10)
                 if i >= tree_chance:
-                    vegetation_sprite = self.SPRITES.medi_trees
+                    vegetation_sprite = self.SPRITES.sprite_medi_trees
                     vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 else:
                     vegetation_sprite = self.empty
                 flag_found = True
             elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.medi_forest
+                vegetation_sprite = self.SPRITES.sprite_medi_forest
                 vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 flag_found = True
         elif climate_id == 4:
             if vegetation_id == 0 and (relief_id == 0 or relief_id == 1):
                 i = np.random.randint(0, 10)
                 if i >= tree_chance:
-                    vegetation_sprite = self.SPRITES.tropical_trees
+                    vegetation_sprite = self.SPRITES.sprite_tropical_trees
                     vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 else:
                     vegetation_sprite = self.empty
                 flag_found = True
             elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.tropical_forest
+                vegetation_sprite = self.SPRITES.sprite_tropical_forest
                 vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 flag_found = True
         elif climate_id == 5:
             if vegetation_id == 0 and (relief_id == 0 or relief_id == 1):
                 i = np.random.randint(0, 10)
                 if i >= tree_chance:
-                    vegetation_sprite = self.SPRITES.arid_trees
+                    vegetation_sprite = self.SPRITES.sprite_arid_trees
                     vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 else:
                     vegetation_sprite = self.empty
                 flag_found = True
             elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.arid_forest
+                vegetation_sprite = self.SPRITES.sprite_arid_forest
                 vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 flag_found = True
         elif climate_id == 7:
             if vegetation_id == 0 and (relief_id == 0 or relief_id == 1):
                 i = np.random.randint(0, 10)
                 if i >= tree_chance:
-                    vegetation_sprite = self.SPRITES.nordic_trees
+                    vegetation_sprite = self.SPRITES.sprite_nordic_trees
                     vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 else:
                     vegetation_sprite = self.empty
                 flag_found = True
             elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.nordic_forest
+                vegetation_sprite = self.SPRITES.sprite_nordic_forest
                 vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
                 flag_found = True
         return vegetation_sprite, flag_found
@@ -200,11 +202,11 @@ class WorldmapSprites:
         coastal_adjacency = np.asarray(coastal_adjacency)
 
         if water_id == 4:
-            water_sprite = self.SPRITES.lake
+            water_sprite = self.SPRITES.sprite_lake
             water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
             found_flag = True
         elif water_id == 5:
-            water_sprite = self.SPRITES.swamp
+            water_sprite = self.SPRITES.sprite_swamp
             water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
             found_flag = True
 
@@ -231,134 +233,134 @@ class WorldmapSprites:
                 #!TODO DENNIS = YANDERE DEV hihi
                 if solo_river: # YANDERE DEV DENNIS <3
                     if coastal_adjacency[0] == 1:
-                        water_sprite = self.SPRITES.river_start_top
+                        water_sprite = self.SPRITES.sprite_river_start_top
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif coastal_adjacency[2] == 1:
-                        water_sprite = self.SPRITES.river_start_left
+                        water_sprite = self.SPRITES.sprite_river_start_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif coastal_adjacency[4] == 1:
-                        water_sprite = self.SPRITES.river_start_bottom
+                        water_sprite = self.SPRITES.sprite_river_start_bottom
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif coastal_adjacency[6] == 1:
-                        water_sprite = self.SPRITES.river_start_right
+                        water_sprite = self.SPRITES.sprite_river_start_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                 elif crossing: # YANDERE DEV DENNIS <3
                     adjacencySum = coastal_adjacency + river_adjacency
                     if adjacencySum[0] >= 1 and adjacencySum[2] >= 1 and adjacencySum[4] >= 1:
-                        water_sprite = self.SPRITES.river_crossing_left
+                        water_sprite = self.SPRITES.sprite_river_crossing_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif adjacencySum[2] >= 1 and adjacencySum[4] >= 1 and adjacencySum[6] >= 1:
-                        water_sprite = self.SPRITES.river_crossing_bottom
+                        water_sprite = self.SPRITES.sprite_river_crossing_bottom
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif adjacencySum[4] >= 1 and adjacencySum[6] >= 1 and adjacencySum[0] >= 1:
-                        water_sprite = self.SPRITES.river_crossing_right
+                        water_sprite = self.SPRITES.sprite_river_crossing_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif adjacencySum[6] >= 1 and adjacencySum[0] >= 1 and adjacencySum[2] >= 1:
-                        water_sprite = self.SPRITES.river_crossing_top
+                        water_sprite = self.SPRITES.sprite_river_crossing_top
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                 else: # YANDERE DEV DENNIS <3
                     if coastal_adjacency[0] == 1 and river_adjacency[4] == 1:
-                        water_sprite = self.SPRITES.river_mouth_top
+                        water_sprite = self.SPRITES.sprite_river_mouth_top
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif coastal_adjacency[2] == 1 and river_adjacency[6] == 1:
-                        water_sprite = self.SPRITES.river_mouth_left
+                        water_sprite = self.SPRITES.sprite_river_mouth_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif coastal_adjacency[4] == 1 and river_adjacency[0] == 1:
-                        water_sprite = self.SPRITES.river_mouth_bottom
+                        water_sprite = self.SPRITES.sprite_river_mouth_bottom
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif coastal_adjacency[6] == 1 and river_adjacency[2] == 1:
-                        water_sprite = self.SPRITES.river_mouth_right
+                        water_sprite = self.SPRITES.sprite_river_mouth_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif (coastal_adjacency[0] == 1 and river_adjacency[2] == 1) or (
                             coastal_adjacency[2] == 1 and river_adjacency[0] == 1):
-                        water_sprite = self.SPRITES.river_top_left
+                        water_sprite = self.SPRITES.sprite_river_top_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif (coastal_adjacency[0] == 1 and river_adjacency[6] == 1) or (
                             coastal_adjacency[6] == 1 and river_adjacency[0] == 1):
-                        water_sprite = self.SPRITES.river_top_right
+                        water_sprite = self.SPRITES.sprite_river_top_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif (coastal_adjacency[2] == 1 and river_adjacency[4] == 1) or (
                             coastal_adjacency[4] == 1 and river_adjacency[2] == 1):
-                        water_sprite = self.SPRITES.river_bottom_left
+                        water_sprite = self.SPRITES.sprite_river_bottom_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif (coastal_adjacency[4] == 1 and river_adjacency[6] == 1) or (
                             coastal_adjacency[6] == 1 and river_adjacency[4] == 1):
-                        water_sprite = self.SPRITES.river_bottom_right
+                        water_sprite = self.SPRITES.sprite_river_bottom_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
             elif river_start: # YANDERE DEV DENNIS <3
                 if river_adjacency[0] == 1:
-                    water_sprite = self.SPRITES.river_start_top
+                    water_sprite = self.SPRITES.sprite_river_start_top
                     water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                     found_flag = True
                 elif river_adjacency[2] == 1:
-                    water_sprite = self.SPRITES.river_start_left
+                    water_sprite = self.SPRITES.sprite_river_start_left
                     water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                     found_flag = True
                 elif river_adjacency[4] == 1:
-                    water_sprite = self.SPRITES.river_start_bottom
+                    water_sprite = self.SPRITES.sprite_river_start_bottom
                     water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                     found_flag = True
                 elif river_adjacency[6] == 1:
-                    water_sprite = self.SPRITES.river_start_right
+                    water_sprite = self.SPRITES.sprite_river_start_right
                     water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                     found_flag = True
             elif not next_to_coast:  # YANDERE DEV DENNIS
                 if not crossing:
                     if river_adjacency[0] == 1 and river_adjacency[4] == 1:
-                        water_sprite = self.SPRITES.river_vertical
+                        water_sprite = self.SPRITES.sprite_river_vertical
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[2] == 1 and river_adjacency[6] == 1:
-                        water_sprite = self.SPRITES.river_horizontal
+                        water_sprite = self.SPRITES.sprite_river_horizontal
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[0] == 1 and river_adjacency[2] == 1:
-                        water_sprite = self.SPRITES.river_top_left
+                        water_sprite = self.SPRITES.sprite_river_top_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[0] == 1 and river_adjacency[6] == 1:
-                        water_sprite = self.SPRITES.river_top_right
+                        water_sprite = self.SPRITES.sprite_river_top_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[4] == 1 and river_adjacency[2] == 1:
-                        water_sprite = self.SPRITES.river_bottom_left
+                        water_sprite = self.SPRITES.sprite_river_bottom_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[4] == 1 and river_adjacency[6] == 1:
-                        water_sprite = self.SPRITES.river_bottom_right
+                        water_sprite = self.SPRITES.sprite_river_bottom_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                 if crossing: # YANDERE DEV DENNIS <3
                     if river_adjacency[0] == 1 and river_adjacency[2] == 1 and river_adjacency[4] == 1:
-                        water_sprite = self.SPRITES.river_crossing_left
+                        water_sprite = self.SPRITES.sprite_river_crossing_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[2] == 1 and river_adjacency[4] == 1 and river_adjacency[6] == 1:
-                        water_sprite = self.SPRITES.river_crossing_bottom
+                        water_sprite = self.SPRITES.sprite_river_crossing_bottom
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[4] == 1 and river_adjacency[6] == 1 and river_adjacency[0] == 1:
-                        water_sprite = self.SPRITES.river_crossing_right
+                        water_sprite = self.SPRITES.sprite_river_crossing_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
                     elif river_adjacency[6] == 1 and river_adjacency[0] == 1 and river_adjacency[2] == 1:
-                        water_sprite = self.SPRITES.river_crossing_top
+                        water_sprite = self.SPRITES.sprite_river_crossing_top
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
 
@@ -377,7 +379,7 @@ class WorldmapSprites:
                     5: self.COLRS.COLOUR_ARID,
                     7: self.COLRS.COLOUR_NORDIC}
         if climate_id != 0 and climate_id != 6 and climate_id != 8 and climate_id != -1 and relief_id != 4:
-            grass_sprite = self.SPRITES.grass
+            grass_sprite = self.SPRITES.sprite_grass
             grass_sprite = grass_sprite.crop(self.create_crop(grass_sprite)[n])
 
             try:
@@ -398,7 +400,7 @@ class WorldmapSprites:
         prim_sprite = self.empty
         if world_object_id == 1:
             prim_flag = True
-            prim_sprite = self.primitive
+            prim_sprite = self.sprite_primitive
         return prim_sprite, prim_flag
 
     def select_coast_sprite(self, coastal_adjacency: List[int]) -> Tuple[type(Image), bool, type(Image), bool]:
@@ -420,77 +422,77 @@ class WorldmapSprites:
         coastal_adjacency = np.asarray(coastal_adjacency)
         if coastal_adjacency[coast_id].sum() == 1: # YANDERE DEV DENNIS <3
             if coastal_adjacency[0] == 1:
-                coast_sprite = self.SPRITES.coast_top
+                coast_sprite = self.SPRITES.sprite_coast_top
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
             if coastal_adjacency[2] == 1:
-                coast_sprite = self.SPRITES.coast_left
+                coast_sprite = self.SPRITES.sprite_coast_left
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
             if coastal_adjacency[4] == 1:
-                coast_sprite = self.SPRITES.coast_bottom
+                coast_sprite = self.SPRITES.sprite_coast_bottom
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
             if coastal_adjacency[6] == 1:
-                coast_sprite = self.SPRITES.coast_right
+                coast_sprite = self.SPRITES.sprite_coast_right
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
         if coastal_adjacency[coast_id].sum() == 2: # YANDERE DEV DENNIS <3
             if coastal_adjacency[0] == 1 and coastal_adjacency[2] == 1:
-                coast_sprite = self.SPRITES.coast_top_left
+                coast_sprite = self.SPRITES.sprite_coast_top_left
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
             if coastal_adjacency[2] == 1 and coastal_adjacency[4] == 1:
-                coast_sprite = self.SPRITES.coast_bottom_left
+                coast_sprite = self.SPRITES.sprite_coast_bottom_left
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
             if coastal_adjacency[4] == 1 and coastal_adjacency[6] == 1:
-                coast_sprite = self.SPRITES.coast_bottom_right
+                coast_sprite = self.SPRITES.sprite_coast_bottom_right
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
             if coastal_adjacency[0] == 1 and coastal_adjacency[6] == 1:
-                coast_sprite = self.SPRITES.coast_top_right
+                coast_sprite = self.SPRITES.sprite_coast_top_right
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
             if coastal_adjacency[0] == 1 and coastal_adjacency[4] == 1:
-                coast_sprite = self.SPRITES.coast_top
-                second_coast_sprite = self.SPRITES.coast_bottom
+                coast_sprite = self.SPRITES.sprite_coast_top
+                second_coast_sprite = self.SPRITES.sprite_coast_bottom
                 coast_flag = True
                 second_coast_flag = True
 
             if coastal_adjacency[2] == 1 and coastal_adjacency[6] == 1:
-                coast_sprite = self.SPRITES.coast_left
-                second_coast_sprite = self.SPRITES.coast_right
+                coast_sprite = self.SPRITES.sprite_coast_left
+                second_coast_sprite = self.SPRITES.sprite_coast_right
                 coast_flag = True
                 second_coast_flag = True
 
         if coastal_adjacency[coast_id].sum() == 3:
             if coastal_adjacency[0] == 1 and coastal_adjacency[2] == 1 and coastal_adjacency[4] == 1:
-                coast_sprite = self.SPRITES.coast_3left
+                coast_sprite = self.SPRITES.sprite_coast_3left
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
             if coastal_adjacency[2] == 1 and coastal_adjacency[4] == 1 and coastal_adjacency[6] == 1:
-                coast_sprite = self.SPRITES.coast_3bottom
+                coast_sprite = self.SPRITES.sprite_coast_3bottom
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
             if coastal_adjacency[4] == 1 and coastal_adjacency[6] == 1 and coastal_adjacency[0] == 1:
-                coast_sprite = self.SPRITES.coast_3right
+                coast_sprite = self.SPRITES.sprite_coast_3right
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
             if coastal_adjacency[6] == 1 and coastal_adjacency[0] == 1 and coastal_adjacency[2] == 1:
-                coast_sprite = self.SPRITES.coast_3top
+                coast_sprite = self.SPRITES.sprite_coast_3top
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
 
         if coastal_adjacency[coast_id].sum() == 4:
-            coast_sprite = self.SPRITES.coast4
+            coast_sprite = self.SPRITES.sprite_coast4
             coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
             coast_flag = True
 
@@ -505,31 +507,31 @@ class WorldmapSprites:
         coastal_adjacency = np.asarray(coastal_adjacency)
 
         if (coastal_adjacency[0] == 0) and (coastal_adjacency[1] == 1) and (coastal_adjacency[2] == 0):
-            corner_sprite = self.SPRITES.coast_corner_top_left
+            corner_sprite = self.SPRITES.sprite_coast_corner_top_left
             corner_flag = True
 
         if coastal_adjacency[2] == 0 and coastal_adjacency[3] == 1 and coastal_adjacency[4] == 0:
             if corner_flag:
-                corner_sprite_secondary = self.SPRITES.coast_corner_bottom_left
+                corner_sprite_secondary = self.SPRITES.sprite_coast_corner_bottom_left
                 corner_flag_secondary = True
                 return corner_sprite, corner_flag, corner_sprite_secondary, corner_flag_secondary
-            corner_sprite = self.SPRITES.coast_corner_bottom_left
+            corner_sprite = self.SPRITES.sprite_coast_corner_bottom_left
             corner_flag = True
 
         if coastal_adjacency[4] == 0 and coastal_adjacency[5] == 1 and coastal_adjacency[6] == 0:
             if corner_flag:
-                corner_sprite_secondary = self.SPRITES.coast_corner_bottom_right
+                corner_sprite_secondary = self.SPRITES.sprite_coast_corner_bottom_right
                 corner_flag_secondary = True
                 return corner_sprite, corner_flag, corner_sprite_secondary, corner_flag_secondary
-            corner_sprite = self.SPRITES.coast_corner_bottom_right
+            corner_sprite = self.SPRITES.sprite_coast_corner_bottom_right
             corner_flag = True
 
         if coastal_adjacency[6] == 0 and coastal_adjacency[7] == 1 and coastal_adjacency[0] == 0:
             if corner_flag:
-                corner_sprite_secondary = self.SPRITES.coast_corner_top_right
+                corner_sprite_secondary = self.SPRITES.sprite_coast_corner_top_right
                 corner_flag_secondary = True
                 return corner_sprite, corner_flag, corner_sprite_secondary, corner_flag_secondary
-            corner_sprite = self.SPRITES.coast_corner_top_right
+            corner_sprite = self.SPRITES.sprite_coast_corner_top_right
             corner_flag = True
 
         return corner_sprite, corner_flag, corner_sprite_secondary, corner_flag_secondary
@@ -538,3 +540,16 @@ class WorldmapSprites:
     def create_crop(image: type(Image)) -> NoReturn:
         return [(0, 0, image.size[0] / 3, image.size[1]), (image.size[0] / 3, 0, 2 * image.size[0] / 3, image.size[1]),
                 (2 * image.size[0] / 3, 0, 3 * image.size[0] / 3, image.size[1])]
+
+    def scale_sprites(self, scale):
+        self.COLRS = Colours(self.blank_canvas, self.empty_array)
+
+        for sprite in self.SPRITES.__dict__:
+            if self.SPRITES.sprt_keyw in sprite:
+                temp = self.SPRITES.__getattribute__(sprite)
+                temp.thumbnail(temp.size[0] * scale[0], temp.size[1] * scale[1], Image.ANTIALIAS)
+
+        x = self.SPRITES.sprite_plains.size[0]
+        y = self.SPRITES.sprite_plains.size[1]
+        self.blank_canvas: ndarray = np.ones((y, x, 4))
+        self.empty_array: ndarray = np.zeros((y, x, 4))

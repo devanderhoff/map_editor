@@ -43,7 +43,7 @@ class World(QObject):
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
-    def create_new_world(self, name, width, height, random_climate):
+    def create_new_world(self, name, width, height, random_climate, scale):
         self.name = name
         self.x_width: int = width
         self.y_height: int = height
@@ -142,23 +142,23 @@ class World(QObject):
         self.logger.debug("func create_regions: region list = %s", str(region_list))
         return region_list
 
-    def create_region_sprite_signal(self, region_id: int) -> NoReturn:
-        self.logger.debug('Region triggered sprite gen = %i', region_id)
-        self.create_region_sprite(region_id, signal_flag=True)
+    # def create_region_sprite_signal(self, region_id: int, scale) -> NoReturn:
+    #     self.logger.debug('Region triggered sprite gen = %i', region_id)
+    #     self.create_region_sprite(region_id, scale, signal_flag=True)
 
-    def create_region_sprite(self, region_id, signal_flag: bool = False) -> NoReturn:
+    def create_region_sprite(self, region_id, scale=(1,1,), signal_flag: bool = False) -> NoReturn:
         self.logger.debug("func create_region_sprite(argument region_id = %d)", region_id)
         region = self.regions[region_id]
         self.generate_coastal_adjacency(region_id, signal_flag)
         self.generate_river_adjacency(region_id, signal_flag)
-
+        # self.sprite_generator.scale_sprites(scale)
         sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                               region.vegetation_id, region.water_id,
                                                               region.world_object_id,
                                                               region.coastal_adjacency,
                                                               region.river_adjacency,
                                                               self.pixmap_flag,
-                                                              self.scale)
+                                                              scale)
 
         if self.pixmap_flag:
             region.setPixmap(sprite)
