@@ -81,6 +81,10 @@ class Region(QGraphicsObject):
     def region_xy_to_scene_coords(self, image_width, image_height):
         return (self.x + 0.5) * image_width, (self.y + 0.5) * image_height
 
+    @staticmethod
+    def standalone_region_xy_to_scene_coords(x,y, image_width, image_height):
+        return (x + 0.5) * image_width, (y + 0.5) * image_height
+
     @property
     def region_sprite(self):
         return self._region_sprite

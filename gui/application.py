@@ -1,4 +1,6 @@
 from typing import Optional, NoReturn, List, Tuple
+from multiprocessing import Pool, Queue
+import multiprocessing as mp
 
 from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
@@ -10,11 +12,14 @@ from gui.create_new_world_dialog import NewWorldDialog
 from base.world import World
 from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y, _REGION_IMAGE_HEIGHT, _REGION_IMAGE_WIDTH
 from utils.log import get_logger
+from gui.progressbar_widget import ProgressBar
 
 
 class MainApplication(QApplication):
     def __init__(self, argv: List[str]):
         super().__init__(argv)
+
+        self.logger = get_logger(f'{__name__}: {self.__class__.__name__}')
 
         self.world_loaded = False
 
@@ -32,10 +37,11 @@ class MainApplication(QApplication):
         self.open_file_dialog = QFileDialog()
         self.open_file_dialog.setAcceptMode(QFileDialog.AcceptOpen)
 
-
-
         self.save_file_dialog = QFileDialog()
         self.save_file_dialog.setAcceptMode(QFileDialog.AcceptSave)
+
+        self.progress_bar = ProgressBar(parent=self)
+
 
 
         # self.save_file_dialog = self.save_file_dialog.getSaveFileName()
@@ -45,11 +51,6 @@ class MainApplication(QApplication):
         self.new_world_ui = NewWorldDialog()
         self.new_world_ui.ui.spinBox.setMinimum(1)
         self.new_world_ui.ui.spinBox_2.setMinimum(1)
-
-
-
-
-
 
 
         ## INITIALIZE ALL SIGNAL CONNECTIONS HERE ##
@@ -102,7 +103,10 @@ class MainApplication(QApplication):
         # self.file_dialog.show()
         self.open_file_dialog.exec_()
         filename = self.open_file_dialog.selectedFiles()
-        filename = filename[0]
+        filename = filename[0] if filename else None
+        if not filename:
+            self.logger.debug("File loading dialog was cancelled; no world will be loaded")
+            return
 
         if self.open_file_dialog.result() == 1:
             # self.file_dialog.close()
@@ -139,16 +143,76 @@ class MainApplication(QApplication):
             self.graphics_scene_map.clear()
             self.worldmap.create_new_world(name, width, height, random_climate=random_climate)
             scale = (1, 1,)
-            for region in self.worldmap.regions:
-                x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
-                pos = QPoint(x, y)
-                self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
+
+            turbo_hyper_mega_processing_mode_3950x = False
+            multiproc_nregions_threshold = 64
+            if len(self.worldmap.regions) >= multiproc_nregions_threshold:
+                turbo_hyper_mega_processing_mode_3950x = True
+
+            if turbo_hyper_mega_processing_mode_3950x:
+                if mp.cpu_count() < 32:
+                    raise ValueError("Your system does not conform to the minimum requirements. (requires at least "
+                                     "16 physical cores or more e-p33n-equivalent).")
+
+                self.logger.debug("Multiprocessing not yet implemented; falling back to single process")
+                #self.generate_world_regions_multiprocessing(scale=scale)
+                self.generate_world_regions_single_process(scale=scale)
+            else:
+                self.generate_world_regions_single_process(scale=scale)
+
 
         # width, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
         # height, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
         # print(width)
         # print(height)
         #
+
+    def generate_world_regions_single_process(self, scale: Tuple[int, ...]):
+
+        # Kon niet slapen dus heb even wat gekloot maar het is niet af; zal volgende x ff verder kijken.
+        self.logger.info(f"Generating new world w/ %s region tiles in single threaded mode...",
+                         len(self.worldmap.regions))
+        for region in self.worldmap.regions:
+            x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0],
+                                                    _REGION_IMAGE_HEIGHT * scale[1])
+            pos = QPoint(x, y)
+            self.graphics_scene_map.create_scene_items_from_world(region.region_sprite, pos)
+
+    def generate_world_regions_multiprocessing(self, scale: Tuple[int, ...]):
+        # Kon niet slapen dus heb even wat gekloot maar het is niet af; zal volgende x ff verder kijken.
+
+        # Later? Volgens mij kost het vooral tijd om die pyqt gui elementen te maken, dus heeft multiprocessing hier niet
+        #  veel zin denk ik. Gui shit intern laten werken met multiprocessing maakt de complexiteit ongeveer 182342x zo leip
+        raise NotImplementedError
+        nprocs = mp.cpu_count() - 1
+        self.logger.info(f"Generating new world w/ %s region tiles in multiprocessing mode (%d processes)",
+                         nprocs)
+
+        self.logger.debug("Starting multiprocessing pool...")
+        noesten_arbeiders = Pool(nprocs)
+        self.logger.debug("Multiprocessing pool init succesful...")
+
+        self.graphics_scene_map.init_newworld_queue()
+        new_world_queue = self.graphics_scene_map.newworld_queue
+
+        for region in self.worldmap.regions:
+            x_input, y_input = region.x, region.y
+
+            noesten_arbeiders.apply(self.scene_creation_func, args=(new_world_queue, region, x_input, y_input,
+                                                                    region.standalone_region_xy_to_scene_coords,
+                                                                    _REGION_IMAGE_WIDTH, _REGION_IMAGE_HEIGHT, scale,))
+        noesten_arbeiders.join()
+        new_world_queue.put("ReAdY")
+
+    @staticmethod
+    def scene_creation_func(queue: mp.Queue, region, x: int, y: int, regionfunc,
+                            region_image_width, region_image_height, scale):
+        raise NotImplementedError
+        # Later? Volgens mij kost het vooral tijd om die pyqt gui elementen te maken, dus heeft multiprocessing hier niet
+        #  veel zin denk ik. Gui shit intern laten werken met multiprocessing maakt de complexiteit ongeveer 182342x zo leip
+        x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
+        pos = QPoint(x, y)
+        queue.put((region.region_sprite, pos,))
 
 
 class GraphicsWorldmapView(QGraphicsView):
@@ -184,13 +248,19 @@ class GraphicsWorldmapScene(QGraphicsScene):
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
+    def init_newworld_queue(self):
+        self.gen_world_queue = mp.Queue
+
     def create_scene_items_from_world(self, item: QGraphicsPixmapItem, pos: QPoint):
         self.addItem(item)
         item.setPos(pos)
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         item = self.itemAt(event.scenePos(), QTransform())
-        item.clicked_signal()
+        if item:
+            item.clicked_signal()
+        else:
+            self.logger.debug("mousePressEvent got None as 'item' from self.itemAt(event.scenePos(), QTransform())")
 
 
 class MainWindow(QMainWindow):
