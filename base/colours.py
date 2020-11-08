@@ -3,6 +3,7 @@ from typing import Tuple, Optional, List, Any
 
 import numpy as np
 from numpy import ndarray
+from PIL import Image
 
 from utils.log import get_logger
 
@@ -52,15 +53,25 @@ class Colours:
             self.empty_array = empty_array
 
         self.COLOUR_SEA_ARR = self.COLOUR_SEA * self.blank_canvas
+        # self.COLOUR_SEA_ARR = Image.fromarray(self.COLOUR_SEA_ARR.astype(np.uint8))
         self.COLOUR_CONT_ARR = self.COLOUR_CONTINENTAL * self.blank_canvas
+        # self.COLOUR_CONT_ARR = Image.fromarray(self.COLOUR_CONT_ARR.astype(np.uint8))
         self.COLOUR_OCEANIC_ARR = self.COLOUR_OCEANIC * self.blank_canvas
+        # self.COLOUR_OCEANIC_ARR = Image.fromarray(self.COLOUR_OCEANIC_ARR.astype(np.uint8))
         self.COLOUR_MEDI_ARR = self.COLOUR_MEDITERRANEAN * self.blank_canvas
+        # self.COLOUR_MEDI_ARR = Image.fromarray(self.COLOUR_MEDI_ARR.astype(np.uint8))
         self.COLOUR_TROPICAL_ARR = self.COLOUR_TROPICAL * self.blank_canvas
+        # self.COLOUR_TROPICAL_ARR = Image.fromarray(self.COLOUR_TROPICAL_ARR.astype(np.uint8))
         self.COLOUR_ARID_ARR = self.COLOUR_ARID * self.blank_canvas
+        # self.COLOUR_ARID_ARR = Image.fromarray(self.COLOUR_ARID_ARR.astype(np.uint8))
         self.COLOUR_DESERT_ARR = self.COLOUR_DESERT * self.blank_canvas
+        # self.COLOUR_DESERT_ARR = Image.fromarray(self.COLOUR_DESERT_ARR.astype(np.uint8))
         self.COLOUR_NORDIC_ARR = self.COLOUR_NORDIC * self.blank_canvas
+        # self.COLOUR_NORDIC_ARR = Image.fromarray(self.COLOUR_NORDIC_ARR.astype(np.uint8))
         self.COLOUR_POLAR_ARR = self.COLOUR_POLAR * self.blank_canvas
+        # self.COLOUR_POLAR_ARR = Image.fromarray(self.COLOUR_POLAR_ARR.astype(np.uint8))
         self.COLOUR_UNKNOWN_ARR = self.COLOUR_GREY * self.blank_canvas
+        # self.COLOUR_UNKNOWN_ARR = Image.fromarray(self.COLOUR_UNKNOWN_ARR.astype(np.uint8))
 
         self.BACKGROUND: Tuple[ndarray, ...] = (self.COLOUR_SEA_ARR, self.COLOUR_CONT_ARR, self.COLOUR_OCEANIC_ARR,
                                                 self.COLOUR_MEDI_ARR, self.COLOUR_TROPICAL_ARR, self.COLOUR_ARID_ARR,

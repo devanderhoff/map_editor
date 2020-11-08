@@ -105,3 +105,11 @@ class SignalSlot:
         self.paint_id = 5
         self.brush_id = 3
 
+    def press_primitive_button_none(self):
+        self.paint_id = 0
+        self.brush_id = 4
+
+    def press_primitive_button_prim(self):
+        self.paint_id = 1
+        self.brush_id = 4
+

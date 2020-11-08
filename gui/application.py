@@ -16,6 +16,7 @@ from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y, _REGION_IMAGE_HEIGHT,
 from utils.log import get_logger
 from gui.progressbar_widget import ProgressBar
 from gui.signal_slots import SignalSlot
+from pympler import asizeof
 
 
 # !TODO:check sprite logic on; coastal adjacency, river types
@@ -89,6 +90,14 @@ class MainApplication(QApplication, SignalSlot):
         self.main_window.ui.pushButton_40.pressed.connect(self.press_river_button_lake)
         self.main_window.ui.pushButton_41.pressed.connect(self.press_river_button_swamp)
 
+        # Connect editor primitive buttons to logic
+        self.main_window.ui.pushButton_34.pressed.connect(self.press_primitive_button_none)
+        self.main_window.ui.pushButton_36.pressed.connect(self.press_primitive_button_prim)
+
+        # Connect text window
+        # self.main_window.ui.textBrowser.
+
+
         # Connect new, load and save world buttons to logic
         self.main_window.ui.actionLoad_world.triggered.connect(self.load_world)
         self.main_window.ui.actionNew_world.triggered.connect(self.new_world)
@@ -112,6 +121,8 @@ class MainApplication(QApplication, SignalSlot):
             self.worldmap.regions[region_id].vegetation_id = self.paint_id
         elif self.brush_id == 3:
             self.worldmap.regions[region_id].water_id = self.paint_id
+        elif self.brush_id == 4:
+            self.worldmap.regions[region_id].world_object_id = self.paint_id
 
         self.worldmap.create_region_sprite(region_id, self.scale, True)
 
@@ -198,16 +209,20 @@ class MainApplication(QApplication, SignalSlot):
             else:
                 self.generate_world_regions_single_process(scale=self.scale)
 
-            # for region in self.worldmap.regions:
-            #     x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
-            #     pos = QPoint(x, y)
-            #     self.graphics_scene_map.create_scene_items_from_world(region, pos)
+        # for region in self.worldmap.regions:
+        #     print(f'region {region.region_id} size info: {asizeof.asized(region, detail=2).format()}')
+        #     print(asizeof.asized(region.pixmap(), detail=2).format())
+        # for region in self.worldmap.regions:
+        #     x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
+        #     pos = QPoint(x, y)
+        #     self.graphics_scene_map.create_scene_items_from_world(region, pos)
 
         # width, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
         # height, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
         # print(width)
         # print(height)
         #
+        # print(asizeof.asized(self.worldmap, detail=2).format())
 
     def generate_world_regions_single_process(self, scale: Tuple[int, ...]):
 
@@ -304,92 +319,5 @@ class GraphicsWorldmapScene(QGraphicsScene):
         if isinstance(item, Region):
             self.recreate_sprite.emit(item.region_id)
 
-    # item.clicked_signal()
 
-# class MainWindow(QMainWindow):
-#     def setupUi(self) -> NoReturn:
-#         self.setObjectName("MainWindow")
-#         self.resize(927, 716)
-#         self.centralwidget = QWidget()
-#         self.centralwidget.setObjectName("centralwidget")
-#
-#         self.horizontalLayout = QHBoxLayout(self.centralwidget)
-#         self.horizontalLayout.setObjectName("horizontalLayout")
-#
-#         self.pushButton = QPushButton(self.centralwidget)
-#         self.pushButton.setObjectName("pushButton")
-#         self.horizontalLayout.addWidget(self.pushButton)
-#
-#         self.pushButton_2 = QPushButton(self.centralwidget)
-#         self.pushButton_2.setObjectName("pushButton_2")
-#         self.horizontalLayout.addWidget(self.pushButton_2)
-#
-#         self.pushButton_3 = QPushButton(self.centralwidget)
-#         self.pushButton_3.setObjectName("pushButton_3")
-#         self.horizontalLayout.addWidget(self.pushButton_3)
-#
-#         self.pushButton_4 = QPushButton(self.centralwidget)
-#         self.pushButton_4.setObjectName("pushButton_4")
-#         self.horizontalLayout.addWidget(self.pushButton_4)
-#
-#         self.pushButton_5 = QPushButton(self.centralwidget)
-#         self.pushButton_5.setObjectName("pushButton_5")
-#         self.horizontalLayout.addWidget(self.pushButton_5)
-#
-#         self.pushButton_6 = QPushButton(self.centralwidget)
-#         self.pushButton_6.setObjectName("pushButton_6")
-#         self.horizontalLayout.addWidget(self.pushButton_6)
-#
-#         self.pushButton_7 = QPushButton(self.centralwidget)
-#         self.pushButton_7.setObjectName("pushButton_7")
-#         self.horizontalLayout.addWidget(self.pushButton_7)
-#
-#         self.pushButton_8 = QPushButton(self.centralwidget)
-#         self.pushButton_8.setObjectName("pushButton_8")
-#         self.horizontalLayout.addWidget(self.pushButton_8)
-#
-#         self.pushButton_9 = QPushButton(self.centralwidget)
-#         self.pushButton_9.setObjectName("pushButton_9")
-#         self.horizontalLayout.addWidget(self.pushButton_9)
-#
-#
-#
-#
-#         self.setCentralWidget(self.centralwidget)
-#
-#         self.menubar = QMenuBar(self)
-#         self.menubar.setGeometry(QRect(0, 0, 927, 21))
-#         self.menubar.setObjectName("menubar")
-#         self.menuFile = QMenu(self.menubar)
-#         self.menuFile.setObjectName("menuFile")
-#         self.setMenuBar(self.menubar)
-#
-#         self.statusbar = QStatusBar(self)
-#         self.statusbar.setObjectName("statusbar")
-#         self.setStatusBar(self.statusbar)
-#
-#         self.actionLoad_world = QAction(self)
-#         self.actionLoad_world.setObjectName("actionLoad_world")
-#         self.actionSave_world = QAction(self)
-#         self.actionSave_world.setObjectName("actionSave_world")
-#         self.actionNew_world = QAction(self)
-#         self.actionNew_world.setObjectName("actionNew_world")
-#
-#         self.menuFile.addAction(self.actionNew_world)
-#         self.menuFile.addAction(self.actionLoad_world)
-#         self.menuFile.addAction(self.actionSave_world)
-#
-#         self.menubar.addAction(self.menuFile.menuAction())
-#
-#         self.retranslateUi()
-#         # QMetaObject.connectSlotsByName(self)
-#
-#     def retranslateUi(self) -> NoReturn:
-#         _translate = QCoreApplication.translate
-#         self.setWindowTitle(_translate("MainWindow", "MainWindow"))
-#         self.pushButton_2.setText(_translate("MainWindow", "PushButton"))
-#         self.pushButton.setText(_translate("MainWindow", "PushButton"))
-#         self.menuFile.setTitle(_translate("MainWindow", "File"))
-#         self.actionLoad_world.setText(_translate("MainWindow", "Load world"))
-#         self.actionSave_world.setText(_translate("MainWindow", "Save world"))
-#         self.actionNew_world.setText(_translate("MainWindow", "New world"))
+

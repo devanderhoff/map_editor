@@ -68,6 +68,9 @@ class Region(QGraphicsPixmapItem):
         self.world_trigger: pyqtSignal = signal
 
         # self.trigger.connect(self.signal_to_climate)
+    def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
+        print(self.region_id)
+
 
     def signal_to_climate(self):
         self.logger.debug("Entered function signal_flag to climate_id")

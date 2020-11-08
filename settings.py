@@ -18,7 +18,7 @@ RESOURCES_DIR = PROJECT_ROOT / 'resources'
 # Overig log file spul
 LOG_FORMAT = '%(asctime)s — %(name)s — %(levelname)s — %(message)s'
 LOG_WRITE_MODE = 'w'  # 'w' for overwriting log file each run, 'a' for appending log file. For debugging; usually 'w'.
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'debug'
 
 # LOG_FORMAT = '%(name)s — %(levelname)s — %(message)s'
 # Kleurtjes voor log

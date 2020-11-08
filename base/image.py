@@ -54,7 +54,6 @@ class WorldmapSprites:
         grass, flag_grass = self.add_grass_sprite(climate_id, relief_id)
         vegatation, flag_veg = self.select_vegetation_sprite(vegetation_id, climate_id, relief_id)
 
-        # prim, flagPrim = self.check_prim(world_object_id)
         if climate_id != 0:
             coast, flag_coast, second_coast, second_flagcoast = self.select_coast_sprite(coastal_adjacency)
             corner, flag_corner, second_corner, second_flagcorner = self.select_corner_sprite(coastal_adjacency)
@@ -67,18 +66,18 @@ class WorldmapSprites:
             water, flag_water = self.select_water_sprite(water_id, river_adjacency, coastal_adjacency)
         else:
             flag_water = False
+        prim, flagPrim = self.check_prim(world_object_id)
 
         if not flag_ground:
             self.logger.warning('NO BACKGROUND FOUND')
         background_image = Image.fromarray(background.astype(np.uint8))
+        # background_image = background
         if flag_relief:
             background_image.alpha_composite(relief)
         if flag_grass:
             background_image.alpha_composite(grass)
         if flag_veg:
             background_image.alpha_composite(vegatation)
-        # if flagPrim:
-        #     background_image.alpha_composite(prim)
         if flag_coast:
             background_image.alpha_composite(coast)
             if second_flagcoast:
@@ -89,9 +88,11 @@ class WorldmapSprites:
                 background_image.alpha_composite(second_corner)
         if flag_water:
             background_image.alpha_composite(water)
+        if flagPrim:
+            background_image.alpha_composite(prim)
 
-        background_image.thumbnail((background_image.size[0] * scale[0], background_image.size[1] * scale[1],),
-                                   Image.ANTIALIAS)
+        # background_image.thumbnail((background_image.size[0] * scale[0], background_image.size[1] * scale[1],),
+        #                            Image.ANTIALIAS)
 
         if pixmap_flag:
             background_image = ImageQt.ImageQt(background_image)
@@ -195,28 +196,39 @@ class WorldmapSprites:
 
     def select_water_sprite(self, water_id: int, river_adjacency: List[int],
                             coastal_adjacency: List[int]) -> Tuple[type(Image), bool]:
+        """Method contains logic for generating world map rivers.
+         River ID's are the following;
+        WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
+        Note, if water_id is 0 (so no water) this function is NOT called.
+         """
+        # set constants etc.
         n = np.random.randint(0, 3)
         found_flag = False
         water_sprite = self.empty
         river_adjacency = np.asarray(river_adjacency)
         coastal_adjacency = np.asarray(coastal_adjacency)
 
+        # When water_id is a lake, return lake sprite.
         if water_id == 4:
             water_sprite = self.SPRITES.sprite_lake
             water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
             found_flag = True
+
+        # When water_id is a swamp, return swamp sprite.
         elif water_id == 5:
             water_sprite = self.SPRITES.sprite_swamp
             water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
             found_flag = True
 
+        # water_id is a river type.
         else:
             # First determine if it's a crossing
             nr_river = sum(river_adjacency[[0, 2, 4, 6]])
             nr_coast = sum(coastal_adjacency[[0, 2, 4, 6]])
-            # Detect when a crossing should be used. 2 cases
-            # first case, 3 adjacent rivers.
-            # 2nd case, 2 adjecent rivers, and a coast.
+
+            # Detect when a crossing should be used, total of 2 cases;
+            # First case: 3 adjacent rivers
+            # Second case: 2 adjacent rivers and an adjacent coast.
             crossing = nr_river >= 3 or (nr_coast == 1 and nr_river == 2)
 
             # Check for coastal rivers, either solo, or should be next to coast.
@@ -230,8 +242,8 @@ class WorldmapSprites:
             # cases;
             # Mouth has to be nextToCoast. Then it can be normal mouth, or river crossing, or soloRiver.
             if next_to_coast:
-                #!TODO DENNIS = YANDERE DEV hihi
-                if solo_river: # YANDERE DEV DENNIS <3
+                # !TODO DENNIS = YANDERE DEV hihi
+                if solo_river:  # YANDERE DEV DENNIS <3
                     if coastal_adjacency[0] == 1:
                         water_sprite = self.SPRITES.sprite_river_start_top
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
@@ -248,7 +260,7 @@ class WorldmapSprites:
                         water_sprite = self.SPRITES.sprite_river_start_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
-                elif crossing: # YANDERE DEV DENNIS <3
+                elif crossing:  # YANDERE DEV DENNIS <3
                     adjacencySum = coastal_adjacency + river_adjacency
                     if adjacencySum[0] >= 1 and adjacencySum[2] >= 1 and adjacencySum[4] >= 1:
                         water_sprite = self.SPRITES.sprite_river_crossing_left
@@ -266,7 +278,7 @@ class WorldmapSprites:
                         water_sprite = self.SPRITES.sprite_river_crossing_top
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
-                else: # YANDERE DEV DENNIS <3
+                else:  # YANDERE DEV DENNIS <3
                     if coastal_adjacency[0] == 1 and river_adjacency[4] == 1:
                         water_sprite = self.SPRITES.sprite_river_mouth_top
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
@@ -303,7 +315,7 @@ class WorldmapSprites:
                         water_sprite = self.SPRITES.sprite_river_bottom_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
-            elif river_start: # YANDERE DEV DENNIS <3
+            elif river_start:  # YANDERE DEV DENNIS <3
                 if river_adjacency[0] == 1:
                     water_sprite = self.SPRITES.sprite_river_start_top
                     water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
@@ -346,7 +358,7 @@ class WorldmapSprites:
                         water_sprite = self.SPRITES.sprite_river_bottom_right
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
-                if crossing: # YANDERE DEV DENNIS <3
+                if crossing:  # YANDERE DEV DENNIS <3
                     if river_adjacency[0] == 1 and river_adjacency[2] == 1 and river_adjacency[4] == 1:
                         water_sprite = self.SPRITES.sprite_river_crossing_left
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
@@ -383,7 +395,7 @@ class WorldmapSprites:
             grass_sprite = grass_sprite.crop(self.create_crop(grass_sprite)[n])
 
             try:
-                colour = climdict[climate_id]/255
+                colour = climdict[climate_id] / 255
             except KeyError:
                 self.logger.debug("Keyerror grass_sprite for climate_id %d (this may be intended behaviour; EAFP)")
                 self.logger.debug('Unknown climate_id, debug...')
@@ -400,7 +412,7 @@ class WorldmapSprites:
         prim_sprite = self.empty
         if world_object_id == 1:
             prim_flag = True
-            prim_sprite = self.sprite_primitive
+            prim_sprite = self.SPRITES.sprite_primitive
         return prim_sprite, prim_flag
 
     def select_coast_sprite(self, coastal_adjacency: List[int]) -> Tuple[type(Image), bool, type(Image), bool]:
@@ -420,7 +432,7 @@ class WorldmapSprites:
         second_coast_flag: bool = False
 
         coastal_adjacency = np.asarray(coastal_adjacency)
-        if coastal_adjacency[coast_id].sum() == 1: # YANDERE DEV DENNIS <3
+        if coastal_adjacency[coast_id].sum() == 1:  # YANDERE DEV DENNIS <3
             if coastal_adjacency[0] == 1:
                 coast_sprite = self.SPRITES.sprite_coast_top
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
@@ -437,7 +449,7 @@ class WorldmapSprites:
                 coast_sprite = self.SPRITES.sprite_coast_right
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])
                 coast_flag = True
-        if coastal_adjacency[coast_id].sum() == 2: # YANDERE DEV DENNIS <3
+        if coastal_adjacency[coast_id].sum() == 2:  # YANDERE DEV DENNIS <3
             if coastal_adjacency[0] == 1 and coastal_adjacency[2] == 1:
                 coast_sprite = self.SPRITES.sprite_coast_top_left
                 coast_sprite = coast_sprite.crop(self.create_crop(coast_sprite)[n])

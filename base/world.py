@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from base.image import WorldmapSprites
 from base.region import Region
 from utils.log import get_logger
-
+from pympler import asizeof
 
 class World(QObject):
     world_trigger = pyqtSignal(int)
@@ -113,9 +113,9 @@ class World(QObject):
             region_information_list = [self.x_width, 0, self.y_height, 0]
             for i in range(nr_regions):
                 n = np.random.randint(0, 8)
-                region_information_list.extend([n, 0, 0, 0, 1])
+                region_information_list.extend([n, 0, 0, 0, 0])
         else:
-            region_information_list = [self.x_width, 0, self.y_height, 0] + ([-1, 0, 0, 0, 1] * nr_regions)
+            region_information_list = [self.x_width, 0, self.y_height, 0] + ([-1, 0, 0, 0, 0] * nr_regions)
         region_information_slice = [*range(4, len(region_information_list), 5)]
         # region_signal_list = [self.world_trigger] * nr_regions
         region_signal_list = [None] * nr_regions
@@ -152,6 +152,7 @@ class World(QObject):
         self.generate_coastal_adjacency(region_id, signal_flag)
         self.generate_river_adjacency(region_id, signal_flag)
         # self.sprite_generator.scale_sprites(scale)
+        # print(f'sprite generator size {asizeof.asized(self.sprite_generator, detail=2).format()}')
         sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                               region.vegetation_id, region.water_id,
                                                               region.world_object_id,
@@ -185,7 +186,7 @@ class World(QObject):
                                                                       region.coastal_adjacency,
                                                                       region.river_adjacency,
                                                                       self.pixmap_flag,
-                                                                      self.scale)
+                                                                      scale)
                 # if self.pixmap_flag:
                 #     region.region_sprite.setPixmap(sprite)
                 # else:

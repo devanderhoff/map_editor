@@ -102,6 +102,12 @@ class Sprites:
     sprite_coast_corner_top_left = Image.open(WMAP_PP_DIR / 'world_coast_corner_topleft.png')
     sprite_coast_corner_top_right = Image.open(WMAP_PP_DIR / 'world_coast_corner_toprigh.png')
 
+    sprite_river_small = Image.open(WMAP_PP_DIR / 'river_small.png')
+    sprite_river_medium = Image.open(WMAP_PP_DIR / 'river_medium.png')
+    sprite_river_large = Image.open(WMAP_PP_DIR / 'river_large.png')
+
+    sprite_primitive = Image.open(WMAP_PP_DIR / 'primitive.png')
+
     def __post_init__(self):
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
