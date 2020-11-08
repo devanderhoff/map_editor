@@ -3,3 +3,5 @@
 /.pyenv/
 /pyenv/
 /venv/
+/build/
+/dist/
