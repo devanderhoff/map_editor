@@ -28,7 +28,7 @@ from pympler import asizeof
 
 class MainApplication(QApplication, SignalSlot):
     rebuild_sprite_signal = pyqtSignal(int)
-
+    world_trigger = pyqtSignal(str, int, str, str, str, str, str)
     def __init__(self, argv: List[str]):
         super().__init__(argv)
 
@@ -106,11 +106,19 @@ class MainApplication(QApplication, SignalSlot):
         # Connect sprite rebuild signal
         self.rebuild_sprite_signal.connect(self.recreate_sprite_slot)
 
-        # Create worldmap logic
-        self.worldmap = World()
 
+        # Create worldmap logic
+        self.worldmap = World(self.world_trigger)
+        self.world_trigger.connect(self.test)
         # Open application
         self.main_window.show()
+
+    def test(self, name, region_id, climate_str, relief_str, vegetation_str,
+                                water_str, world_object_str):
+
+        text = f'Region name: {name} \nRegion ID: {region_id} \nClimate: {climate_str} \nRelief: {relief_str} \n' \
+               f'Vegetation: {vegetation_str} \nWater: {water_str} \nPrimitive: {world_object_str}'
+        self.main_window.ui.textBrowser.setPlainText(text)
 
     def recreate_sprite_slot(self, region_id: int):
         if self.brush_id == 0:
@@ -302,10 +310,13 @@ class GraphicsWorldmapScene(QGraphicsScene):
     def __init__(self, signal):
         super().__init__()
 
+
+
         self.recreate_sprite = signal
         # Add logger to this class (if it doesn't have one already)
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
+
 
     def init_newworld_queue(self):
         self.gen_world_queue = mp.Queue

@@ -10,9 +10,9 @@ from utils.log import get_logger
 from pympler import asizeof
 
 class World(QObject):
-    world_trigger = pyqtSignal(int)
 
-    def __init__(self):
+
+    def __init__(self, signal):
         super().__init__()
 
         self.worldname = 'insert name here'
@@ -36,7 +36,7 @@ class World(QObject):
         self.scale = (1, 1,)
         self.worldmap_image: Optional[type(Image)] = None  # Hold created full worldmap image.
 
-        # self.world_trigger.connect(self.create_region_sprite_signal)
+        self.world_trigger = signal
         # self.world_trigger.connect(self.create_region_sprite_signal)
 
         # Add logger to this class (if it doesn't have one already)
@@ -127,21 +127,41 @@ class World(QObject):
         vegetation_id_list = [self.region_info_lst[idx + 2] for idx in self.region_info_slice]
         water_id_list = [self.region_info_lst[idx + 3] for idx in self.region_info_slice]
         worldobject_id_list = [self.region_info_lst[idx + 4] for idx in self.region_info_slice]
-        region_bytes = [self.region_info_lst[idx:idx + 5] for idx in self.region_info_slice]
+        region_bytes_list = [self.region_info_lst[idx:idx + 5] for idx in self.region_info_slice]
 
         self.logger.debug('create_regions says: test')
-        region_list = [
-            Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id, worldobject_id,
-                   signal)
-            for region_id, (
-                [x, y], region_bytes, name, climate_id, relief_id, vegetation_id, water_id, worldobject_id, signal)
-            in enumerate(
-                zip(self.xy_regions, region_bytes, self.region_names, climate_id_list, relief_id_list,
-                    vegetation_id_list,
-                    water_id_list, worldobject_id_list, self.region_signal_lst))]
+        # region_list = [
+        #     Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id, worldobject_id,
+        #            signal)
+        #     for region_id, (
+        #         [x, y], region_bytes, name, climate_id, relief_id, vegetation_id, water_id, worldobject_id, signal)
+        #     in enumerate(
+        #         zip(self.xy_regions, region_bytes, self.region_names, climate_id_list, relief_id_list,
+        #             vegetation_id_list,
+        #             water_id_list, worldobject_id_list, self.region_signal_lst))]
+        # self.logger.debug("func create_regions: region list = %s", str(region_list))
+
+        region_list = []
+        for region_id, region_name in enumerate(self.region_names):
+            [x, y] = self.xy_regions[region_id]
+            region_bytes = region_bytes_list[region_id]
+            name = self.region_names[region_id]
+            climate_id = climate_id_list[region_id]
+            relief_id = relief_id_list[region_id]
+            vegetation_id = vegetation_id_list[region_id]
+            water_id = water_id_list[region_id]
+            worldobject_id = worldobject_id_list[region_id]
+
+
+            region_list.append(Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id, worldobject_id, self.world_trigger))
         self.logger.debug("func create_regions: region list = %s", str(region_list))
         return region_list
 
+
+
+
+
+        return region_list
     # def create_region_sprite_signal(self, region_id: int, scale) -> NoReturn:
     #     self.logger.debug('Region triggered sprite gen = %i', region_id)
     #     self.create_region_sprite(region_id, scale, signal_flag=True)

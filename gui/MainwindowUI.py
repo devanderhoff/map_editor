@@ -234,7 +234,7 @@ class Ui_MainWindow(object):
         self.frame_3.setObjectName("frame_3")
         self.formLayout = QtWidgets.QFormLayout(self.frame_3)
         self.formLayout.setObjectName("formLayout")
-        self.textBrowser = QtWidgets.QTextBrowser(self.frame_3)
+        self.textBrowser = QtWidgets.QPlainTextEdit(self.frame_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -243,6 +243,7 @@ class Ui_MainWindow(object):
         self.textBrowser.setMinimumSize(QtCore.QSize(171, 171))
         self.textBrowser.setMaximumSize(QtCore.QSize(171, 171))
         self.textBrowser.setObjectName("textBrowser")
+        self.textBrowser.setReadOnly(True)
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.textBrowser)
         self.checkBox = QtWidgets.QCheckBox(self.frame_3)
         self.checkBox.setObjectName("checkBox")
@@ -343,7 +344,7 @@ class GraphicsWorldmapView(QGraphicsView):
         # Add logger to this class (if it doesn't have one already)
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
-
+        # self.setAcceptHoverEvents(True)
         self._zoom = 0
         self.scale(0.3, 0.3)
 
@@ -361,4 +362,3 @@ class GraphicsWorldmapView(QGraphicsView):
         else:
             self._zoom = 0
 
-    # def

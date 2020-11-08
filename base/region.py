@@ -19,8 +19,6 @@ class Region(QGraphicsPixmapItem):
     WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
     WORLD_OBJECT = ("NONE", "SPAWN",)
 
-    # trigger = pyqtSignal()
-
     def __init__(self, x: int, y: int, region_list: List[int], name: str, region_id: int, climate_id: int,
                  relief_id: int, vegetation_id: int, water_id: int, worldobject_id: int, signal: pyqtSignal):
         # X and Y coordinates start top-left corner.
@@ -29,10 +27,11 @@ class Region(QGraphicsPixmapItem):
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
+        self.init_flag = False
         self.x: int = x  # base x
         self.y: int = y  # base y
 
-        self.region_list: List[int] = region_list
+        self.region_list: List[int] = [None, None, None, None, None]
 
         self.image_coords: Optional[Any] = None
 
@@ -66,10 +65,13 @@ class Region(QGraphicsPixmapItem):
 
         self.region_changed: bool = False
         self.world_trigger: pyqtSignal = signal
-
+        self.setAcceptHoverEvents(True)
         # self.trigger.connect(self.signal_to_climate)
+
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
-        print(self.region_id)
+        self.world_trigger.emit(self.name, self.region_id, self.climate_str, self.relief_str, self.vegetation_str,
+                                self.water_str, self.world_object_str)
+
 
 
     def signal_to_climate(self):
@@ -102,9 +104,10 @@ class Region(QGraphicsPixmapItem):
 
     @climate_id.setter
     def climate_id(self, value):
-        self._climate_id = value
-        self.region_list[0] = value
-        self.climate_str = self.CLIMATES[value]
+        if not self.init_flag:
+            self._climate_id = value
+            self.region_list[0] = value
+            self.climate_str = self.CLIMATES[value]
 
     @property
     def relief_id(self):
@@ -112,10 +115,11 @@ class Region(QGraphicsPixmapItem):
 
     @relief_id.setter
     def relief_id(self, value):
-        self._relief_id = value
-        self.region_list[1] = value
-        self.relief_str = self.RELIEF[value]
-        # self.world_trigger.emit(self.region_id)
+        if not self.init_flag:
+            self._relief_id = value
+            self.region_list[1] = value
+            self.relief_str = self.RELIEF[value]
+            # self.world_trigger.emit(self.region_id)
 
     @property
     def vegetation_id(self):
@@ -123,10 +127,11 @@ class Region(QGraphicsPixmapItem):
 
     @vegetation_id.setter
     def vegetation_id(self, value):
-        self._vegetation_id = value
-        self.region_list[2] = value
-        self.vegetation_str = self.VEGETATION[value]
-        # self.world_trigger.emit(self.region_id)
+        if not self.init_flag:
+            self._vegetation_id = value
+            self.region_list[2] = value
+            self.vegetation_str = self.VEGETATION[value]
+            # self.world_trigger.emit(self.region_id)
 
     @property
     def water_id(self):
@@ -134,10 +139,11 @@ class Region(QGraphicsPixmapItem):
 
     @water_id.setter
     def water_id(self, value):
-        self._water_id = value
-        self.region_list[3] = value
-        self.water_str = self.WATER[value]
-        # self.world_trigger.emit(self.region_id)
+        if not self.init_flag:
+            self._water_id = value
+            self.region_list[3] = value
+            self.water_str = self.WATER[value]
+            # self.world_trigger.emit(self.region_id)
 
     @property
     def world_object_id(self):
@@ -145,9 +151,10 @@ class Region(QGraphicsPixmapItem):
 
     @world_object_id.setter
     def world_object_id(self, value):
-        self._world_object_id = value
-        self.region_list[4] = value
-        self.world_object_str = self.WORLD_OBJECT[value]
+        if not self.init_flag:
+            self._world_object_id = value
+            self.region_list[4] = value
+            self.world_object_str = self.WORLD_OBJECT[value]
 
         # self.world_trigger.emit(self.region_id)
 
