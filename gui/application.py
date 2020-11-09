@@ -105,6 +105,7 @@ class MainApplication(QApplication, SignalSlot):
         self.main_window.ui.actionLoad_world.triggered.connect(self.load_world)
         self.main_window.ui.actionNew_world.triggered.connect(self.new_world)
         self.main_window.ui.actionSave_world.triggered.connect(self.save_world)
+        self.main_window.ui.actionTiny_world.triggered.connect(self.load_tiny_world)
 
         # Connect world menu
         self.main_window.ui.actionRemovePrimitives.triggered.connect(self.remove_primitives)
@@ -122,7 +123,7 @@ class MainApplication(QApplication, SignalSlot):
 
     def display_region_info(self, name, region_id, climate_str, relief_str, vegetation_str,
                             water_str, world_object_str):
-        self.logger.debug(f'Display region information of region {name}, with region ID {region_id}')
+        # self.logger.debug(f'Display region information of region {name}, with region ID {region_id}')
         text = f'Region name: {name} \nRegion ID: {region_id} \nClimate: {climate_str} \nRelief: {relief_str} \n' \
                f'Vegetation: {vegetation_str} \nWater: {water_str} \nPrimitive: {world_object_str} \n------------------'
         self.main_window.ui.textBrowser.setPlainText(text)
@@ -211,12 +212,18 @@ class MainApplication(QApplication, SignalSlot):
         filename = self.save_file_dialog.selectedFiles()
         filename = filename[0]
 
-        if self.save_file_dialog.result() == 1:
+        if self.save_file_dialog.result() == 1 and self.worldmap.regions:
             self.worldmap.rebuild_region_list()
+            if min(self.worldmap.region_info_lst) == -1:
+                self.message_box.setText('There are regions of type "Unknown" still present, abort')
+                self.message_box.setIcon(QMessageBox.Critical)
+                self.message_box.show()
+                return
             if '.ybin' in filename and self.worldmap.region_info_lst:
                 with open(filename, mode='wb') as file:
-
+                    self.logger.debug('Saving worldmap to file, please wait..')
                     file.write(bytearray(self.worldmap.region_info_lst))
+                    self.logger.debug('File saved!')
             elif self.worldmap.region_info_lst:
                 filename = filename + '.ybin'
                 with open(filename, mode='wb') as file:
@@ -227,7 +234,22 @@ class MainApplication(QApplication, SignalSlot):
                 self.message_box.show()
 
         else:
+            self.message_box.setText('Something went wrong')
+            self.message_box.setIcon(QMessageBox.Critical)
+            self.message_box.show()
             return
+
+    def load_tiny_world(self):
+        filename = './resources/world.ybin'
+        self.graphics_scene_map.clear()
+        self.worldmap.regions = []
+        self.worldmap.load_world(filename)
+        self.scale = (1, 1,)
+        for region in self.worldmap.regions:
+            x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * self.scale[0],
+                                                    _REGION_IMAGE_HEIGHT * self.scale[1])
+            pos = QPointF(x, y)
+            self.graphics_scene_map.create_scene_items_from_world(region, pos)
 
     def load_world(self):
         # !TODO: Reset view after creating a new scene.
@@ -405,7 +427,6 @@ class GraphicsWorldmapScene(QGraphicsScene):
             same = item == self.current_item
 
             if isinstance(item, Region) and not same:
-                print(item.region_id)
                 self.rebuild_sprite_signal.emit(item.region_id)
                 self.current_item = item
 

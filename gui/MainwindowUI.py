@@ -330,9 +330,12 @@ class Ui_MainWindow(object):
         self.actionLoad_world.setObjectName("actionLoad_world")
         self.actionSave_world = QtWidgets.QAction(MainWindow)
         self.actionSave_world.setObjectName("actionSave_world")
+        self.actionTiny_world = QtWidgets.QAction(MainWindow)
+        self.actionTiny_world.setObjectName("Tiny_world")
         self.menuFile.addAction(self.actionNew_world)
         self.menuFile.addAction(self.actionLoad_world)
         self.menuFile.addAction(self.actionSave_world)
+        self.menuFile.addAction(self.actionTiny_world)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menutemp.menuAction())
 
@@ -363,9 +366,12 @@ class Ui_MainWindow(object):
         self.pushButton_35.setText(_translate("MainWindow", "Forrest"))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_3), _translate("MainWindow", "Vegetation brushes"))
         self.pushButton_33.setText(_translate("MainWindow", "None"))
-        self.pushButton_37.setText(_translate("MainWindow", "Estuary"))
-        self.pushButton_38.setText(_translate("MainWindow", "River"))
-        self.pushButton_39.setText(_translate("MainWindow", "Maw"))
+        self.pushButton_37.setText(_translate("MainWindow", "River\n"
+                                                            "Small"))
+        self.pushButton_38.setText(_translate("MainWindow", "River\n"
+                                                            "Medium"))
+        self.pushButton_39.setText(_translate("MainWindow", "River\n"
+                                                            "Large"))
         self.pushButton_40.setText(_translate("MainWindow", "Lake"))
         self.pushButton_41.setText(_translate("MainWindow", "Swamp"))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_4), _translate("MainWindow", "Water brushes"))
@@ -393,6 +399,7 @@ class Ui_MainWindow(object):
         self.actionNew_world.setText(_translate("MainWindow", "New  world"))
         self.actionLoad_world.setText(_translate("MainWindow", "Load world"))
         self.actionSave_world.setText(_translate("MainWindow", "Save world"))
+        self.actionTiny_world.setText(_translate("MainWindow", "Load pre-build tiny world"))
         self.actionWorldinfo.setText(_translate("MainWindow", "World Info"))
         self.actionRemovePrimitives.setText(_translate("MainWindow", "Remove Primitives"))
 

@@ -195,6 +195,7 @@ class WorldmapSprites:
         WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
         Note, if water_id is 0 (so no water) this function is NOT called.
          """
+        #! TODO: EVERYTHING AGAIN THIS IS GARBAGE
         # set constants etc.
         n = np.random.randint(0, 3)
         found_flag = False
@@ -370,6 +371,13 @@ class WorldmapSprites:
                         water_sprite = water_sprite.crop(self.create_crop(water_sprite)[n])
                         found_flag = True
 
+            # If nothing is found return something
+        if water_id in [1,2,3] and not found_flag:
+            n = np.random.randint(4)
+            temp = [self.SPRITES.sprite_river_start_bottom, self.SPRITES.sprite_river_start_left,
+             self.SPRITES.sprite_river_start_top, self.SPRITES.sprite_river_start_right]
+            water_sprite = temp[n]
+            found_flag = True
         return water_sprite, found_flag
 
     def add_grass_sprite(self, climate_id: int, relief_id: int) -> Tuple[type(Image), bool]:
