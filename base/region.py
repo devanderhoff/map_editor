@@ -1,10 +1,16 @@
 from typing import Optional, List, Any
 import time
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal,pyqtBoundSignal, QObject
 from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsSceneMouseEvent
 from nptyping import NDArray
 
 from utils.log import get_logger
+
+# class SignalHolder(QObject):
+#     signal = pyqtSignal(str, int, str, str, str, str, str)
+#
+#     def __init__(self):
+#         super().__init__()
 
 
 class Region(QGraphicsPixmapItem):
@@ -14,13 +20,14 @@ class Region(QGraphicsPixmapItem):
     # Initialize region information.
     CLIMATES = ("SEA", "CONTINENTAL", "OCEANIC", "MEDITERRANEAN", "TROPICAL", "ARID", "DESERT", "NORDIC",
                 "POLAR", "UNKNOWN",)
-    RELIEF = ("NONE", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS",)
+    RELIEF = ("FLAT", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS",)
     VEGETATION = ("NONE", "FOREST", )
     WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
     WORLD_OBJECT = ("NONE", "SPAWN",)
 
+
     def __init__(self, x: int, y: int, region_list: List[int], name: str, region_id: int, climate_id: int,
-                 relief_id: int, vegetation_id: int, water_id: int, worldobject_id: int, signal: pyqtSignal):
+                 relief_id: int, vegetation_id: int, water_id: int, worldobject_id: int, region_info_signal: pyqtSignal):
         # X and Y coordinates start top-left corner.
         super().__init__()
 
@@ -62,23 +69,22 @@ class Region(QGraphicsPixmapItem):
         # self.region_sprite: RegionPixmap = RegionPixmap(self.trigger)
         # self.region_sprite = QGraphicsPixmapItem()
         self.region_sprite_loaded: bool = False
-
         self.region_changed: bool = False
-        self.world_trigger: pyqtSignal = signal
+
         self.setAcceptHoverEvents(True)
-        # self.trigger.connect(self.signal_to_climate)
+
+        # self.signal_holder = SignalHolder()
+        self.region_info_signal = region_info_signal
+
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
-        self.world_trigger.emit(self.name, self.region_id, self.climate_str, self.relief_str, self.vegetation_str,
+        # self.logger.debug(self.region_id)
+        self.region_info_signal.emit(self.name, self.region_id, self.climate_str, self.relief_str, self.vegetation_str,
                                 self.water_str, self.world_object_str)
 
-
-
-    def signal_to_climate(self):
-        self.logger.debug("Entered function signal_flag to climate_id")
-        self.logger.debug(self.region_id)
-        # self.climate_id = 0
-        # self.world_trigger.emit(self.region_id)
+        # self.signal.emit(self.name, self.region_id, self.climate_str, self.relief_str,
+        #                                self.vegetation_str,
+        #                                self.water_str, self.world_object_str)
 
     def region_xy_to_img_coords(self, image_width, image_height):
         return int(self.x * image_width), int(self.y * image_height)

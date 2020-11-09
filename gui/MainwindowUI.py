@@ -39,16 +39,16 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
         self.frame.setSizePolicy(sizePolicy)
-        self.frame.setMinimumSize(QtCore.QSize(189, 348))
-        self.frame.setMaximumSize(QtCore.QSize(189, 348))
+        self.frame.setMinimumSize(QtCore.QSize(189, 360))
+        self.frame.setMaximumSize(QtCore.QSize(189, 360)) #348
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.frame)
         self.verticalLayout.setObjectName("verticalLayout")
         self.toolBox = QtWidgets.QToolBox(self.frame)
-        self.toolBox.setMinimumSize(QtCore.QSize(169, 328))
-        self.toolBox.setMaximumSize(QtCore.QSize(169, 328))
+        self.toolBox.setMinimumSize(QtCore.QSize(169, 350)) #328
+        self.toolBox.setMaximumSize(QtCore.QSize(169, 350)) #328
         self.toolBox.setAccessibleName("")
         self.toolBox.setObjectName("toolBox")
 
@@ -57,6 +57,7 @@ class Ui_MainWindow(object):
         self.climate_tab.setMinimumSize(QtCore.QSize(169, 168))
         self.climate_tab.setMaximumSize(QtCore.QSize(169, 168))
         self.climate_tab.setObjectName("climates")
+        # self.climate_tab.set
 
         self.widget = QtWidgets.QWidget(self.climate_tab)
         self.widget.setGeometry(QtCore.QRect(0, 0, 167, 167))
@@ -68,7 +69,7 @@ class Ui_MainWindow(object):
         self.pushButton.setMinimumSize(QtCore.QSize(51, 51))
         self.pushButton.setMaximumSize(QtCore.QSize(51, 51))
         self.pushButton.setObjectName("pushButton")
-        # self.pushButton.setText('Cont')
+
 
         self.gridLayout_2.addWidget(self.pushButton, 0, 0, 1, 1)
         self.pushButton_2 = QtWidgets.QPushButton(self.widget)
@@ -76,7 +77,7 @@ class Ui_MainWindow(object):
         self.pushButton_2.setMaximumSize(QtCore.QSize(51, 51))
         self.pushButton_2.setObjectName("pushButton_2")
         self.gridLayout_2.addWidget(self.pushButton_2, 0, 1, 1, 1)
-        # self.pushButton_2.setText('cont')
+
 
         self.pushButton_3 = QtWidgets.QPushButton(self.widget)
         self.pushButton_3.setMinimumSize(QtCore.QSize(51, 51))
@@ -227,6 +228,42 @@ class Ui_MainWindow(object):
         self.pushButton_36.setObjectName("pushButton_36")
         self.gridLayout_8.addWidget(self.pushButton_36, 1, 0, 1, 1)
         self.toolBox.addItem(self.page_5, "")
+
+        # Beun
+        self.page_6 = QtWidgets.QWidget()
+        self.page_6.setObjectName("page_6")
+        self.layoutWidget_7 = QtWidgets.QWidget(self.page_6)
+        self.layoutWidget_7.setGeometry(QtCore.QRect(0, 0, 167, 167))
+        self.layoutWidget_7.setObjectName("layoutWidget_7")
+        self.gridLayout_9 = QtWidgets.QGridLayout(self.layoutWidget_7)
+        self.gridLayout_9.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_9.setObjectName("gridLayout_9")
+        self.pushButton_99 = QtWidgets.QPushButton(self.layoutWidget_7)
+        self.pushButton_99.setMinimumSize(QtCore.QSize(51, 51))
+        self.pushButton_99.setMaximumSize(QtCore.QSize(51, 51))
+        self.pushButton_99.setObjectName("pushButton_99")
+        self.gridLayout_9.addWidget(self.pushButton_99, 0, 0, 1, 1)
+        self.pushButton_98 = QtWidgets.QPushButton(self.layoutWidget_7)
+        self.pushButton_98.setMinimumSize(QtCore.QSize(51, 51))
+        self.pushButton_98.setMaximumSize(QtCore.QSize(51, 51))
+        self.pushButton_98.setObjectName("pushButton_98")
+        self.gridLayout_9.addWidget(self.pushButton_98, 1, 0, 1, 1)
+        self.pushButton_97 = QtWidgets.QPushButton(self.layoutWidget_7)
+        self.pushButton_97.setMinimumSize(QtCore.QSize(51, 51))
+        self.pushButton_97.setMaximumSize(QtCore.QSize(51, 51))
+        self.pushButton_97.setObjectName("pushButton_97")
+        self.gridLayout_9.addWidget(self.pushButton_97, 0, 1, 1, 1)
+        self.pushButton_96 = QtWidgets.QPushButton(self.layoutWidget_7)
+        self.pushButton_96.setMinimumSize(QtCore.QSize(51, 51))
+        self.pushButton_96.setMaximumSize(QtCore.QSize(51, 51))
+        self.pushButton_96.setObjectName("pushButton_96")
+        self.gridLayout_9.addWidget(self.pushButton_96, 1, 1, 1, 1)
+        self.toolBox.addItem(self.page_6, "")
+
+
+
+
+
         self.verticalLayout.addWidget(self.toolBox)
         self.frame_3 = QtWidgets.QFrame(self.splitter)
         self.frame_3.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -273,8 +310,16 @@ class Ui_MainWindow(object):
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
+
         self.menutemp = QtWidgets.QMenu(self.menubar)
         self.menutemp.setObjectName("menutemp")
+        self.actionWorldinfo = QtWidgets.QAction(MainWindow)
+        self.actionWorldinfo.setObjectName("actionWorldinfo")
+        self.actionRemovePrimitives = QtWidgets.QAction(MainWindow)
+        self.actionRemovePrimitives.setObjectName("actionRemovePrimitives")
+        self.menutemp.addAction(self.actionWorldinfo)
+        self.menutemp.addAction(self.actionRemovePrimitives)
+
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -326,16 +371,30 @@ class Ui_MainWindow(object):
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_4), _translate("MainWindow", "Water brushes"))
         self.pushButton_34.setText(_translate("MainWindow", "None"))
         self.pushButton_36.setText(_translate("MainWindow", "Primitive"))
-        self.toolBox.setItemText(self.toolBox.indexOf(self.page_5), _translate("MainWindow", "Primitive brush"))
+        self.toolBox.setItemText(self.toolBox.indexOf(self.page_5), _translate("MainWindow", "Primitive brushes"))
+        self.pushButton_99.setText(_translate("MainWindow", "Empty \nSea"))
+        self.pushButton_98.setText(_translate("MainWindow", "Flatten"))
+        self.pushButton_98.hide()
+        self.pushButton_97.setText(_translate("MainWindow", 'Cont \nFlatlands'))
+        self.pushButton_96.setText(_translate("MainWindow", 'Chop'))
+        self.pushButton_96.hide()
+        self.toolBox.setItemText(self.toolBox.indexOf(self.page_6), _translate("MainWindow", "Utility brushes"))
+
         self.checkBox.setText(_translate("MainWindow", "CheckBox"))
+        self.checkBox.hide()
         self.checkBox_2.setText(_translate("MainWindow", "CheckBox"))
+        self.checkBox_2.hide()
         self.checkBox_3.setText(_translate("MainWindow", "CheckBox"))
+        self.checkBox_3.hide()
         self.pushButton_42.setText(_translate("MainWindow", "PushButton"))
+        self.pushButton_42.hide()
         self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.menutemp.setTitle(_translate("MainWindow", "temp"))
+        self.menutemp.setTitle(_translate("MainWindow", "World"))
         self.actionNew_world.setText(_translate("MainWindow", "New  world"))
         self.actionLoad_world.setText(_translate("MainWindow", "Load world"))
         self.actionSave_world.setText(_translate("MainWindow", "Save world"))
+        self.actionWorldinfo.setText(_translate("MainWindow", "World Info"))
+        self.actionRemovePrimitives.setText(_translate("MainWindow", "Remove Primitives"))
 
 class GraphicsWorldmapView(QGraphicsView):
     def __init__(self, widget):

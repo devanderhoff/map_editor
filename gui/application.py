@@ -2,11 +2,12 @@ from typing import Optional, NoReturn, List, Tuple
 from multiprocessing import Pool, Queue
 import multiprocessing as mp
 
-from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint, pyqtSignal
+from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint, pyqtSignal, pyqtBoundSignal, pyqtSlot, \
+    QObject, QEvent
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
     QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QApplication, QMainWindow, QGraphicsPixmapItem, \
-    QFileDialog, QErrorMessage, QMessageBox, QProgressBar, QDialog, QInputDialog
-from PyQt5.QtGui import QTransform
+    QFileDialog, QErrorMessage, QMessageBox, QProgressBar, QDialog, QInputDialog, QGraphicsSceneHoverEvent
+from PyQt5.QtGui import QTransform, QMouseEvent
 
 from gui.create_new_world_dialog import NewWorldDialog
 from gui.MainwindowUI import MainWindow
@@ -28,7 +29,8 @@ from pympler import asizeof
 
 class MainApplication(QApplication, SignalSlot):
     rebuild_sprite_signal = pyqtSignal(int)
-    world_trigger = pyqtSignal(str, int, str, str, str, str, str)
+    region_info_signal = pyqtSignal(str, int, str, str, str, str, str)
+
     def __init__(self, argv: List[str]):
         super().__init__(argv)
 
@@ -58,7 +60,8 @@ class MainApplication(QApplication, SignalSlot):
         self.save_file_dialog.setAcceptMode(QFileDialog.AcceptSave)
 
         # Initialize progress bar for loading etc
-        self.progress_bar = ProgressBar(parent=self)
+        # self.progress_bar = QProgressBar(self.main_window)
+        # self.progress_bar.setGeometry(200, 80, 250, 20)
 
         # Connect editor climate buttons to logic
         self.main_window.ui.pushButton.pressed.connect(self.press_climate_button_sea)
@@ -94,30 +97,34 @@ class MainApplication(QApplication, SignalSlot):
         self.main_window.ui.pushButton_34.pressed.connect(self.press_primitive_button_none)
         self.main_window.ui.pushButton_36.pressed.connect(self.press_primitive_button_prim)
 
-        # Connect text window
-        # self.main_window.ui.textBrowser.
-
+        # Connect editor utility buttons to logic
+        self.main_window.ui.pushButton_99.pressed.connect(self.press_utility_button_only_sea)
+        self.main_window.ui.pushButton_97.pressed.connect(self.press_utility_button_cont_flatlands)
 
         # Connect new, load and save world buttons to logic
         self.main_window.ui.actionLoad_world.triggered.connect(self.load_world)
         self.main_window.ui.actionNew_world.triggered.connect(self.new_world)
         self.main_window.ui.actionSave_world.triggered.connect(self.save_world)
 
+        # Connect world menu
+        self.main_window.ui.actionRemovePrimitives.triggered.connect(self.remove_primitives)
+        self.main_window.ui.actionWorldinfo.triggered.connect(self.show_world_summary)
+
         # Connect sprite rebuild signal
         self.rebuild_sprite_signal.connect(self.recreate_sprite_slot)
+        self.region_info_signal.connect(self.display_region_info)
 
+        # Create worldmap logic and send signals "downstream"
+        self.worldmap = World(self.region_info_signal)
 
-        # Create worldmap logic
-        self.worldmap = World(self.world_trigger)
-        self.world_trigger.connect(self.test)
         # Open application
         self.main_window.show()
 
-    def test(self, name, region_id, climate_str, relief_str, vegetation_str,
-                                water_str, world_object_str):
-
+    def display_region_info(self, name, region_id, climate_str, relief_str, vegetation_str,
+                            water_str, world_object_str):
+        self.logger.debug(f'Display region information of region {name}, with region ID {region_id}')
         text = f'Region name: {name} \nRegion ID: {region_id} \nClimate: {climate_str} \nRelief: {relief_str} \n' \
-               f'Vegetation: {vegetation_str} \nWater: {water_str} \nPrimitive: {world_object_str}'
+               f'Vegetation: {vegetation_str} \nWater: {water_str} \nPrimitive: {world_object_str} \n------------------'
         self.main_window.ui.textBrowser.setPlainText(text)
 
     def recreate_sprite_slot(self, region_id: int):
@@ -131,8 +138,72 @@ class MainApplication(QApplication, SignalSlot):
             self.worldmap.regions[region_id].water_id = self.paint_id
         elif self.brush_id == 4:
             self.worldmap.regions[region_id].world_object_id = self.paint_id
+        elif self.brush_id == 5:
+            # Utility brush;
+            if self.paint_id == 0:
+                self.worldmap.regions[region_id].climate_id = 0
+                self.worldmap.regions[region_id].relief_id = 0
+                self.worldmap.regions[region_id].vegetation_id = 0
+                self.worldmap.regions[region_id].water_id = 0
+                self.worldmap.regions[region_id].world_object_id = 0
+            if self.paint_id == 1:
+                self.worldmap.regions[region_id].climate_id = 1
+                self.worldmap.regions[region_id].relief_id = 0
+                self.worldmap.regions[region_id].vegetation_id = 0
+                self.worldmap.regions[region_id].water_id = 0
+                self.worldmap.regions[region_id].world_object_id = 0
 
         self.worldmap.create_region_sprite(region_id, self.scale, True)
+
+    def remove_primitives(self):
+        for region in self.worldmap.regions:
+            if region.world_object_id == 1:
+                region.world_object_id = 0
+                self.worldmap.create_region_sprite(region.region_id, self.scale, False)
+
+    def show_world_summary(self):
+        # CLIMATES = ("SEA", "CONTINENTAL", "OCEANIC", "MEDITERRANEAN", "TROPICAL", "ARID", "DESERT", "NORDIC",
+        # "POLAR", "UNKNOWN",)
+        # RELIEF = ("NONE", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS",)
+        # VEGETATION = ("NONE", "FOREST", )
+        # WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
+        # WORLD_OBJECT = ("NONE", "SPAWN",)
+
+        climate_count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        climate_count_spawns = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        relief_count = [0, 0, 0, 0, 0]
+        forrest_count = 0
+        water_count = [0, 0, 0, 0, 0, 0]
+
+        if self.worldmap.regions:
+            for region in self.worldmap.regions:
+                climate_count[region.climate_id] += 1
+                if region.world_object_id == 1:
+                    climate_count_spawns[region.climate_id] += 1
+                relief_count[region.relief_id] += 1
+                if region.vegetation_id == 1:
+                    forrest_count += 1
+                water_count[region.water_id] += 1
+
+            # Create string
+            text = f'Climate count \n-------------------\n Sea = {climate_count[0]} \nContinental = {climate_count[1]} \nOceanic = ' \
+                   f'{climate_count[2]} \nMediterranean = {climate_count[3]} \nTropical = {climate_count[4]} \nArid = {climate_count[5]} ' \
+                   f'\nDesert = {climate_count[6]} \nNordic = {climate_count[7]} \nPolar = {climate_count[8]}\nUnknown = {climate_count[9]} \n\nRelief count \n-------------------\n' \
+                   f'Flat = {relief_count[0]}\nPlains = {relief_count[1]}\nRocky = {relief_count[2]}\nHills = {relief_count[3]}\n' \
+                   f'Mountains = {relief_count[4]}\nForrest count = {forrest_count}\n\nWater counts\n-------------------\nRiver small = {water_count[1]}\nRiver medium = {water_count[2]}\n' \
+                   f'River large = {water_count[3]}\nLakes = {water_count[4]}\nSwamps = {water_count[4]}\n\nPrimitives per climate\n-------------------\n' \
+                   f'Sea primitives = {climate_count_spawns[0]}\nContinental primitives = {climate_count_spawns[1]}\nOceanic primitives = {climate_count_spawns[2]}\n' \
+                   f'Mediterranean primitives = {climate_count_spawns[3]}\nTropical primitives = {climate_count_spawns[4]}\n' \
+                   f'Arid primitives = {climate_count_spawns[5]}\nDesert primitives = {climate_count_spawns[6]}\nNordic primitives = {climate_count_spawns[7]}\nPolar primitives = {climate_count_spawns[8]}' \
+                   f'\nUnknown primitives = {climate_count_spawns[9]}'
+
+            self.message_box.setText(text)
+            self.message_box.setIcon(QMessageBox.Information)
+            self.message_box.show()
+        else:
+            self.message_box.setText('Something went wrong')
+            self.message_box.setIcon(QMessageBox.Critical)
+            self.message_box.show()
 
     def save_world(self):
 
@@ -178,6 +249,7 @@ class MainApplication(QApplication, SignalSlot):
                                                             _REGION_IMAGE_HEIGHT * self.scale[1])
                     pos = QPointF(x, y)
                     self.graphics_scene_map.create_scene_items_from_world(region, pos)
+
             else:
                 self.message_box.setText('You have to load an .ybin world file')
                 self.message_box.setIcon(QMessageBox.Critical)
@@ -306,17 +378,19 @@ class MainApplication(QApplication, SignalSlot):
 #         else:
 #             self._zoom = 0
 
+
 class GraphicsWorldmapScene(QGraphicsScene):
-    def __init__(self, signal):
+    def __init__(self, rebuild_sprite_signal):
         super().__init__()
 
+        self.rebuild_sprite_signal = rebuild_sprite_signal
 
-
-        self.recreate_sprite = signal
         # Add logger to this class (if it doesn't have one already)
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
+        self.current_item = None
+        self.pressed = False
 
     def init_newworld_queue(self):
         self.gen_world_queue = mp.Queue
@@ -325,10 +399,25 @@ class GraphicsWorldmapScene(QGraphicsScene):
         self.addItem(item)
         item.setPos(pos)
 
+    def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+        if self.pressed:
+            item = self.itemAt(event.scenePos(), QTransform())
+            same = item == self.current_item
+
+            if isinstance(item, Region) and not same:
+                print(item.region_id)
+                self.rebuild_sprite_signal.emit(item.region_id)
+                self.current_item = item
+
+        return super(GraphicsWorldmapScene, self).mouseMoveEvent(event)
+
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
-        item = self.itemAt(event.scenePos(), QTransform())
-        if isinstance(item, Region):
-            self.recreate_sprite.emit(item.region_id)
+        if event.button() == 1:
+            item = self.itemAt(event.scenePos(), QTransform())
+            if isinstance(item, Region):
+                self.rebuild_sprite_signal.emit(item.region_id)
+                self.current_item = item
+                self.pressed = True
 
-
-
+    def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+        self.pressed = False

@@ -9,10 +9,10 @@ from base.region import Region
 from utils.log import get_logger
 from pympler import asizeof
 
+
 class World(QObject):
 
-
-    def __init__(self, signal):
+    def __init__(self, region_info_signal):
         super().__init__()
 
         self.worldname = 'insert name here'
@@ -36,9 +36,7 @@ class World(QObject):
         self.scale = (1, 1,)
         self.worldmap_image: Optional[type(Image)] = None  # Hold created full worldmap image.
 
-        self.world_trigger = signal
-        # self.world_trigger.connect(self.create_region_sprite_signal)
-
+        self.region_info_signal = region_info_signal
         # Add logger to this class (if it doesn't have one already)
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
@@ -50,15 +48,10 @@ class World(QObject):
 
         # Create region base information.
         self.nr_regions, self.region_names, self.xy_regions, self.region_info_lst, \
-        self.region_info_slice, self.region_signal_lst = self.create_region_base(random_climate=random_climate,
+        self.region_info_slice = self.create_region_base(random_climate=random_climate,
                                                                                  loaded_file=False)
-
         # Populate base regions
         self.regions = self.create_regions()
-
-        # Determine sprite related coastal and river adjacencies.
-        # self.generate_coastal_adjacency()
-        # self.generate_river_adjacency()
 
         # Create initial sprites
         self.create_all_region_sprites()
@@ -70,7 +63,7 @@ class World(QObject):
         self.x_width = self.region_info_lst[0]
         self.y_height = self.region_info_lst[2]
         self.nr_regions, self.region_names, self.xy_regions, self.region_info_lst, \
-        self.region_info_slice, self.region_signal_lst = self.create_region_base(loaded_file=True)
+        self.region_info_slice = self.create_region_base(loaded_file=True)
         self.regions = self.create_regions()
         # self.generate_coastal_adjacency()
         # self.generate_river_adjacency()
@@ -78,9 +71,6 @@ class World(QObject):
 
     def rebuild_region_list(self):
         region_list_base = [self.x_width, 0, self.y_height, 0]
-        # for region in self.regions:
-        #     temp = [1, *region.region_list[1:]]
-            # region_list_base.extend(temp)
         [region_list_base.extend(region.region_list) for region in self.regions]
         self.region_info_lst = region_list_base
 
@@ -117,9 +107,8 @@ class World(QObject):
         else:
             region_information_list = [self.x_width, 0, self.y_height, 0] + ([-1, 0, 0, 0, 0] * nr_regions)
         region_information_slice = [*range(4, len(region_information_list), 5)]
-        # region_signal_list = [self.world_trigger] * nr_regions
-        region_signal_list = [None] * nr_regions
-        return nr_regions, region_names, xy_regions, region_information_list, region_information_slice, region_signal_list
+
+        return nr_regions, region_names, xy_regions, region_information_list, region_information_slice
 
     def create_regions(self) -> NoReturn:
         climate_id_list = [self.region_info_lst[idx] for idx in self.region_info_slice]
@@ -152,21 +141,13 @@ class World(QObject):
             water_id = water_id_list[region_id]
             worldobject_id = worldobject_id_list[region_id]
 
-
-            region_list.append(Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id, worldobject_id, self.world_trigger))
+            region_list.append(
+                Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id,
+                       worldobject_id, self.region_info_signal))
         self.logger.debug("func create_regions: region list = %s", str(region_list))
         return region_list
 
-
-
-
-
-        return region_list
-    # def create_region_sprite_signal(self, region_id: int, scale) -> NoReturn:
-    #     self.logger.debug('Region triggered sprite gen = %i', region_id)
-    #     self.create_region_sprite(region_id, scale, signal_flag=True)
-
-    def create_region_sprite(self, region_id, scale=(1,1,), signal_flag: bool = False) -> NoReturn:
+    def create_region_sprite(self, region_id, scale=(1, 1,), signal_flag: bool = False) -> NoReturn:
         self.logger.debug("func create_region_sprite(argument region_id = %d)", region_id)
         region = self.regions[region_id]
         self.generate_coastal_adjacency(region_id, signal_flag)
@@ -186,7 +167,6 @@ class World(QObject):
         else:
             region.region_sprite(sprite)
         region.region_changed = True
-
 
         # if self.pixmap_flag:
         #     region.region_sprite.setPixmap(sprite)

@@ -79,6 +79,10 @@ class Sprites:
     #                     river_start_left.size[1])]
     # primitive = Image.open('./prim.png')
 
+    sprite_river_size_small = Image.open(WMAP_PP_DIR/'river_small.png')
+    sprite_river_size_medium = Image.open(WMAP_PP_DIR / 'river_medium.png')
+    sprite_river_size_large = Image.open(WMAP_PP_DIR / 'river_large.png')
+
     # Coast
     sprite_coast_left = Image.open(WMAP_PP_DIR / 'world_coast_left.png')
     sprite_coast_bottom = Image.open(WMAP_PP_DIR / 'world_coast_bottom.png')
