@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
     QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QApplication, QMainWindow, QGraphicsPixmapItem, \
     QFileDialog, QErrorMessage, QMessageBox, QProgressBar, QDialog, QInputDialog, QGraphicsSceneHoverEvent
 from PyQt5.QtGui import QTransform, QMouseEvent
-
+from pathlib import Path
 from gui.create_new_world_dialog import NewWorldDialog
 from gui.MainwindowUI import MainWindow
 from base.world import World
@@ -18,7 +18,7 @@ from utils.log import get_logger
 from gui.progressbar_widget import ProgressBar
 from gui.signal_slots import SignalSlot
 from pympler import asizeof
-
+from settings import RESOURCES_DIR
 
 # !TODO:check sprite logic on; coastal adjacency, river types
 # !TODO:make override checks on worldmap edit
@@ -240,7 +240,8 @@ class MainApplication(QApplication, SignalSlot):
             return
 
     def load_tiny_world(self):
-        filename = './resources/world.ybin'
+        DIR = Path(RESOURCES_DIR).resolve()
+        filename = DIR / 'world.ybin'
         self.graphics_scene_map.clear()
         self.worldmap.regions = []
         self.worldmap.load_world(filename)
