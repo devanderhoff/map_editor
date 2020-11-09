@@ -13,7 +13,9 @@ There are multiple options to start a new edit, but most advicable is editing a 
   3) Load this world inside the editor. 
   4) Edit world and save. Then replace the editted .ybin file with the world.ybin in the ymir save folder.
   
-Notes
+Notes, please read!!
+
 1) SAVE OFTEN! First release so it will probably crash at some point. I'll add auto-save soonish.
 2) There are currently almost no "checks" in place to check the legitimacy of the map. So for example, ingame rivers are never next to each other, but you can do 
   this as much as you want with the current state of the editor. So make sure things make sense. 
+3) Memory usage is about 1GB right now because of the sprite sizes, so keep that in mind.
