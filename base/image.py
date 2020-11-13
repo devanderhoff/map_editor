@@ -77,6 +77,8 @@ class WorldmapSprites:
             self.logger.warning('NO BACKGROUND FOUND')
         background_image = Image.fromarray(background.astype(np.uint8))
         # background_image = background
+        if flag_relief:
+            background_image.alpha_composite(relief)
         if flag_grass:
             background_image.alpha_composite(grass)
         if flag_coast:
@@ -87,8 +89,6 @@ class WorldmapSprites:
             background_image.alpha_composite(corner)
             if second_flagcorner:
                 background_image.alpha_composite(second_corner)
-        if flag_relief:
-            background_image.alpha_composite(relief)
         if flag_veg:
             background_image.alpha_composite(vegatation)
         if flag_water:
