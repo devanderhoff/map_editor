@@ -121,14 +121,16 @@ class MainApplication(QApplication, SignalSlot):
         # Open application
         self.main_window.show()
 
-    def display_region_info(self, name, region_id, climate_str, relief_str, vegetation_str,
-                            water_str, world_object_str):
-        # self.logger.debug(f'Display region information of region {name}, with region ID {region_id}')
+    def display_region_info(self, name: str, region_id: int, climate_str: str, relief_str: str, vegetation_str: str,
+                            water_str: str, world_object_str: str):
+        """Slot that provides logic to populate the region information display"""
+        self.logger.debug(f'Display region information of region {name}, with region ID {region_id}')
         text = f'Region name: {name} \nRegion ID: {region_id} \nClimate: {climate_str} \nRelief: {relief_str} \n' \
                f'Vegetation: {vegetation_str} \nWater: {water_str} \nPrimitive: {world_object_str} \n------------------'
         self.main_window.ui.textBrowser.setPlainText(text)
 
     def recreate_sprite_slot(self, region_id: int):
+        """Slot that provides brush functionality"""
         if self.brush_id == 0:
             self.worldmap.regions[region_id].climate_id = self.paint_id
         elif self.brush_id == 1:
@@ -154,15 +156,26 @@ class MainApplication(QApplication, SignalSlot):
                 self.worldmap.regions[region_id].water_id = 0
                 self.worldmap.regions[region_id].world_object_id = 0
 
-        self.worldmap.create_region_sprite(region_id, self.scale, True)
+        # Recreate sprite with adjusted region values, include signal_flag = True to rebuild adjacent tiles.
+        self.worldmap.create_region_sprite(region_id, self.scale, signal_flag=True)
 
     def remove_primitives(self):
-        for region in self.worldmap.regions:
-            if region.world_object_id == 1:
-                region.world_object_id = 0
-                self.worldmap.create_region_sprite(region.region_id, self.scale, False)
+        """Menu function to remove all primitive spawns on the worldmap"""
+        if self.worldmap.regions:
+            for region in self.worldmap.regions:
+                if region.world_object_id == 1:
+                    region.world_object_id = 0
+                    self.worldmap.create_region_sprite(region.region_id, self.scale, False)
+            self.message_box.setText('Removed primitives')
+            self.message_box.setIcon(QMessageBox.Information)
+            self.message_box.show()
+        else:
+            self.message_box.setText('No region data present.')
+            self.message_box.setIcon(QMessageBox.Critical)
+            self.message_box.show()
 
     def show_world_summary(self):
+        """Menu function that gives an summary of the created worldmap"""
         # CLIMATES = ("SEA", "CONTINENTAL", "OCEANIC", "MEDITERRANEAN", "TROPICAL", "ARID", "DESERT", "NORDIC",
         # "POLAR", "UNKNOWN",)
         # RELIEF = ("NONE", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS",)
@@ -240,6 +253,7 @@ class MainApplication(QApplication, SignalSlot):
             return
 
     def load_tiny_world(self):
+        """Convenience function to load in pre-build tiny world for quick editting."""
         DIR = Path(RESOURCES_DIR).resolve()
         filename = DIR / 'world.ybin'
         self.graphics_scene_map.clear()
@@ -295,111 +309,11 @@ class MainApplication(QApplication, SignalSlot):
             self.graphics_scene_map.clear()
             self.scale = (1, 1,)
             self.worldmap.create_new_world(name, width, height, random_climate, self.scale)
-
-            turbo_hyper_mega_processing_mode_3950x = False
-            multiproc_nregions_threshold = 64
-            if len(self.worldmap.regions) >= multiproc_nregions_threshold:
-                turbo_hyper_mega_processing_mode_3950x = True
-
-            if turbo_hyper_mega_processing_mode_3950x:
-                if mp.cpu_count() < 32:
-                    raise ValueError("Your system does not conform to the minimum requirements. (requires at least "
-                                     "16 physical cores or more e-p33n-equivalent).")
-
-                self.logger.debug("Multiprocessing not yet implemented; falling back to single process")
-                # self.generate_world_regions_multiprocessing(scale=scale)
-                self.generate_world_regions_single_process(scale=self.scale)
-            else:
-                self.generate_world_regions_single_process(scale=self.scale)
-
-        # for region in self.worldmap.regions:
-        #     print(f'region {region.region_id} size info: {asizeof.asized(region, detail=2).format()}')
-        #     print(asizeof.asized(region.pixmap(), detail=2).format())
-        # for region in self.worldmap.regions:
-        #     x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
-        #     pos = QPoint(x, y)
-        #     self.graphics_scene_map.create_scene_items_from_world(region, pos)
-
-        # width, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
-        # height, _ = self.new_world_width.getInt(self.MainWindow.centralwidget, 'new world width', 'test')
-        # print(width)
-        # print(height)
-        #
-        # print(asizeof.asized(self.worldmap, detail=2).format())
-
-    def generate_world_regions_single_process(self, scale: Tuple[int, ...]):
-
-        # Kon niet slapen dus heb even wat gekloot maar het is niet af; zal volgende x ff verder kijken.
-        self.logger.info(f"Generating new world w/ %s region tiles in single threaded mode...",
-                         len(self.worldmap.regions))
-
-        for region in self.worldmap.regions:
-            x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0],
-                                                    _REGION_IMAGE_HEIGHT * scale[1])
-            pos = QPointF(x, y)
-            self.graphics_scene_map.create_scene_items_from_world(region, pos)
-
-    def generate_world_regions_multiprocessing(self, scale: Tuple[int, ...]):
-        # Kon niet slapen dus heb even wat gekloot maar het is niet af; zal volgende x ff verder kijken.
-
-        # Later? Volgens mij kost het vooral tijd om die pyqt gui elementen te maken, dus heeft multiprocessing hier niet
-        #  veel zin denk ik. Gui shit intern laten werken met multiprocessing maakt de complexiteit ongeveer 182342x zo leip
-        raise NotImplementedError
-        nprocs = mp.cpu_count() - 1
-        self.logger.info(f"Generating new world w/ %s region tiles in multiprocessing mode (%d processes)",
-                         nprocs)
-
-        self.logger.debug("Starting multiprocessing pool...")
-        noesten_arbeiders = Pool(nprocs)
-        self.logger.debug("Multiprocessing pool init succesful...")
-
-        self.graphics_scene_map.init_newworld_queue()
-        new_world_queue = self.graphics_scene_map.newworld_queue
-
-        for region in self.worldmap.regions:
-            x_input, y_input = region.x, region.y
-
-            noesten_arbeiders.apply(self.scene_creation_func, args=(new_world_queue, region, x_input, y_input,
-                                                                    region.standalone_region_xy_to_scene_coords,
-                                                                    _REGION_IMAGE_WIDTH, _REGION_IMAGE_HEIGHT, scale,))
-        noesten_arbeiders.join()
-        new_world_queue.put("ReAdY")
-
-    @staticmethod
-    def scene_creation_func(queue: mp.Queue, region, x: int, y: int, regionfunc,
-                            region_image_width, region_image_height, scale):
-        raise NotImplementedError
-        # Later? Volgens mij kost het vooral tijd om die pyqt gui elementen te maken, dus heeft multiprocessing hier niet
-        #  veel zin denk ik. Gui shit intern laten werken met multiprocessing maakt de complexiteit ongeveer 182342x zo leip
-        x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * scale[0], _REGION_IMAGE_HEIGHT * scale[1])
-        pos = QPointF(x, y)
-        queue.put((region.region_sprite, pos,))
-
-
-# class GraphicsWorldmapView(QGraphicsView):
-#     def __init__(self, widget):
-#         super().__init__(widget)
-#
-#         # Add logger to this class (if it doesn't have one already)
-#         if not hasattr(self, 'logger'):
-#             self.logger = get_logger(__class__.__name__)
-#
-#         self._zoom = 0
-#         self.scale(0.3, 0.3)
-#
-#     def wheelEvent(self, event) -> NoReturn:
-#         if event.angleDelta().y() > 0:
-#             factor = 1.25
-#             self._zoom += 1
-#         else:
-#             factor = 0.8
-#             self._zoom -= 1
-#         if self._zoom > 0:
-#             self.scale(factor, factor)
-#         elif self._zoom < 0:
-#             self.scale(factor, factor)
-#         else:
-#             self._zoom = 0
+            for region in self.worldmap.regions:
+                x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * self.scale[0],
+                                                        _REGION_IMAGE_HEIGHT * self.scale[1])
+                pos = QPointF(x, y)
+                self.graphics_scene_map.create_scene_items_from_world(region, pos)
 
 
 class GraphicsWorldmapScene(QGraphicsScene):
@@ -414,9 +328,6 @@ class GraphicsWorldmapScene(QGraphicsScene):
 
         self.current_item = None
         self.pressed = False
-
-    def init_newworld_queue(self):
-        self.gen_world_queue = mp.Queue
 
     def create_scene_items_from_world(self, item: QGraphicsPixmapItem, pos: QPoint):
         self.addItem(item)

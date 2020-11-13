@@ -17,7 +17,7 @@ class World(QObject):
 
         self.worldname = 'insert name here'
         self.pixmap_flag = True  # Use pixmaps instead of PIL images.
-        self.region_check_queue = []
+        self.region_check_queue = [] # Queue of regions that have to rebuild their sprite.
 
         self.x_width: Optional[int] = None  # Width of the base.
         self.y_height: Optional[int] = None  # Height of the base.
@@ -32,7 +32,7 @@ class World(QObject):
             List[pyqtSignal]] = None  # list containing copies of the PyQt signal_flag to be send to region during init
 
         # Sprite related stuff
-        self.sprite_generator: WorldmapSprites = WorldmapSprites()
+        self.sprite_generator: WorldmapSprites = WorldmapSprites() # Initialize sprite builder
         self.scale = (1, 1,)
         self.worldmap_image: Optional[type(Image)] = None  # Hold created full worldmap image.
 
@@ -42,6 +42,7 @@ class World(QObject):
             self.logger = get_logger(__class__.__name__)
 
     def create_new_world(self, name, width, height, random_climate, scale):
+        """Create new world functionality"""
         self.name = name
         self.x_width: int = width
         self.y_height: int = height
@@ -57,6 +58,7 @@ class World(QObject):
         self.create_all_region_sprites()
 
     def load_world(self, filename) -> NoReturn:
+        """Load world from .ybin file"""
         with open(filename, mode='rb') as file:
             self.region_info_lst = list(file.read())
 
@@ -65,32 +67,24 @@ class World(QObject):
         self.nr_regions, self.region_names, self.xy_regions, self.region_info_lst, \
         self.region_info_slice = self.create_region_base(loaded_file=True)
         self.regions = self.create_regions()
-        # self.generate_coastal_adjacency()
-        # self.generate_river_adjacency()
         self.create_all_region_sprites()
 
     def rebuild_region_list(self):
+        """Rebuild region information before saving world. Placeholder for later"""
         region_list_base = [self.x_width, 0, self.y_height, 0]
         [region_list_base.extend(region.region_list) for region in self.regions]
         self.region_info_lst = region_list_base
 
     def create_all_region_sprites(self) -> NoReturn:
+        """Create sprites for all region, by looping over and calling create_region_sprite for all."""
         self.logger.debug(f'{self.regions}')
-        for region in self.regions:
-            self.logger.debug("region.region_id: %d", region.region_id)
-            # pool.apply(self.create_region_sprite, args=(region.region_id,))
-            self.create_region_sprite(region.region_id)
-
-    def create_world_image(self) -> NoReturn:
-        total_image_width = self._REGION_IMAGE_WIDTH * self.x_width
-        total_image_height = self._REGION_IMAGE_HEIGHT * self.y_height
-        self.worldmap_image = Image.new('RGB', (total_image_width, total_image_height))
-
-        for region in self.regions:
-            self.worldmap_image.paste(region.region_sprite, region.region_xy_to_img_coords(self._REGION_IMAGE_WIDTH,
-                                                                                           self._REGION_IMAGE_HEIGHT))
+        if self.regions:
+            for region in self.regions:
+                self.logger.debug("region.region_id: %d", region.region_id)
+                self.create_region_sprite(region.region_id)
 
     def create_region_base(self, loaded_file: bool, random_climate: bool = False) -> NoReturn:
+        """Create base information each region needs"""
         if self.x_width != 0 or self.y_height != 0:
             nr_regions = self.x_width * self.y_height
         else:
@@ -111,6 +105,7 @@ class World(QObject):
         return nr_regions, region_names, xy_regions, region_information_list, region_information_slice
 
     def create_regions(self) -> NoReturn:
+        """Populate the regions by creating Region() in the region list"""
         climate_id_list = [self.region_info_lst[idx] for idx in self.region_info_slice]
         relief_id_list = [self.region_info_lst[idx + 1] for idx in self.region_info_slice]
         vegetation_id_list = [self.region_info_lst[idx + 2] for idx in self.region_info_slice]
@@ -118,7 +113,7 @@ class World(QObject):
         worldobject_id_list = [self.region_info_lst[idx + 4] for idx in self.region_info_slice]
         region_bytes_list = [self.region_info_lst[idx:idx + 5] for idx in self.region_info_slice]
 
-        self.logger.debug('create_regions says: test')
+        self.logger.debug('Creating regions..')
         # region_list = [
         #     Region(x, y, region_bytes, name, region_id, climate_id, relief_id, vegetation_id, water_id, worldobject_id,
         #            signal)
@@ -152,8 +147,6 @@ class World(QObject):
         region = self.regions[region_id]
         self.generate_coastal_adjacency(region_id, signal_flag)
         self.generate_river_adjacency(region_id, signal_flag)
-        # self.sprite_generator.scale_sprites(scale)
-        # print(f'sprite generator size {asizeof.asized(self.sprite_generator, detail=2).format()}')
         sprite = self.sprite_generator.create_required_sprite(region.climate_id, region.relief_id,
                                                               region.vegetation_id, region.water_id,
                                                               region.world_object_id,
@@ -168,12 +161,6 @@ class World(QObject):
             region.region_sprite(sprite)
         region.region_changed = True
 
-        # if self.pixmap_flag:
-        #     region.region_sprite.setPixmap(sprite)
-        # else:
-        #     region.region_sprite(sprite)
-        # region.region_changed = True
-
         if signal_flag:
             # self.logger.debug('Region_id_queue length: ', len(self.region_check_queue))
             for region_id_queue in self.region_check_queue:
@@ -187,10 +174,6 @@ class World(QObject):
                                                                       region.river_adjacency,
                                                                       self.pixmap_flag,
                                                                       scale)
-                # if self.pixmap_flag:
-                #     region.region_sprite.setPixmap(sprite)
-                # else:
-                #     region.region_sprite(sprite)
                 if self.pixmap_flag:
                     region.setPixmap(sprite)
                 else:
@@ -201,7 +184,7 @@ class World(QObject):
         # region = self.regions[region_id]
         n = region_id
 
-        coastal_adjacency_temp = [0, 0, 0, 0, 0, 0, 0, 0]  # 3x3 numpy array van maken?
+        coastal_adjacency_temp = [0, 0, 0, 0, 0, 0, 0, 0]
         top_id = n - self.x_width
         top_left_id = n - self.x_width - 1
         left_id = n - 1
@@ -276,28 +259,54 @@ class World(QObject):
         check_list = [1, 2, 3]
 
         if 0 <= top_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[top_id].region_id)
             if self.regions[top_id].water_id in check_list:
                 river_adjacency_temp[0] = 1
         if 0 <= top_left_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[top_left_id].region_id)
             if self.regions[top_left_id].water_id in check_list:
                 river_adjacency_temp[1] = 1
         if 0 <= left_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[left_id].region_id)
             if self.regions[left_id].water_id in check_list:
                 river_adjacency_temp[2] = 1
         if 0 <= bottom_left_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[bottom_left_id].region_id)
             if self.regions[bottom_left_id].water_id in check_list:
                 river_adjacency_temp[3] = 1
         if 0 <= bottom_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[bottom_id].region_id)
             if self.regions[bottom_id].water_id in check_list:
                 river_adjacency_temp[4] = 1
         if 0 <= bottom_right_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[bottom_right_id].region_id)
             if self.regions[bottom_right_id].water_id in check_list:
                 river_adjacency_temp[5] = 1
         if 0 <= right_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[right_id].region_id)
             if self.regions[right_id].water_id in check_list:
                 river_adjacency_temp[6] = 1
         if 0 <= top_right_id < self.nr_regions:
+            if signal:
+                self.region_check_queue.append(self.regions[top_right_id].region_id)
             if self.regions[top_right_id].water_id in check_list:
                 river_adjacency_temp[7] = 1
 
         self.regions[n].river_adjacency = river_adjacency_temp
+
+    def create_world_image(self) -> NoReturn:
+        """Unused"""
+        total_image_width = self._REGION_IMAGE_WIDTH * self.x_width
+        total_image_height = self._REGION_IMAGE_HEIGHT * self.y_height
+        self.worldmap_image = Image.new('RGB', (total_image_width, total_image_height))
+
+        for region in self.regions:
+            self.worldmap_image.paste(region.region_sprite, region.region_xy_to_img_coords(self._REGION_IMAGE_WIDTH,
+                                                                                           self._REGION_IMAGE_HEIGHT))
