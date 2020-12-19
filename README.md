@@ -4,7 +4,7 @@ A work in progress map editor for the video-game Ymir (https://store.steampowere
 If you have any suggestions please let me know through issues or official ymir discord (https://discord.com/invite/cwJD5Ds)
 
 How to use
-1) Go to the releases page (https://github.com/devanderhoff/map_editor/releases/) and download the map_editor.exe or clone this repo and run main.py
+1) Go to the releases page (https://github.com/devanderhoff/map_editor/releases/) and download the map_editor.exe, clone this repo and run main.py or download the .rar
 2) If using the exe, please run as administrator.
 
 There are multiple options to start a new edit, but most advicable is editing a map ymir generated, or use the buildin "load pre-build tiny world" button.
