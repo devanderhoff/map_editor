@@ -317,8 +317,11 @@ class Ui_MainWindow(object):
         self.actionWorldinfo.setObjectName("actionWorldinfo")
         self.actionRemovePrimitives = QtWidgets.QAction(MainWindow)
         self.actionRemovePrimitives.setObjectName("actionRemovePrimitives")
+        self.actionShiftone = QtWidgets.QAction(MainWindow)
+        self.actionShiftone.setObjectName("actionShiftone")
         self.menutemp.addAction(self.actionWorldinfo)
         self.menutemp.addAction(self.actionRemovePrimitives)
+        self.menutemp.addAction(self.actionShiftone)
 
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -402,6 +405,7 @@ class Ui_MainWindow(object):
         self.actionTiny_world.setText(_translate("MainWindow", "Load pre-build tiny world"))
         self.actionWorldinfo.setText(_translate("MainWindow", "World Info"))
         self.actionRemovePrimitives.setText(_translate("MainWindow", "Remove Primitives"))
+        self.actionShiftone.setText(_translate('MainWindow', "Shift all regions"))
 
 class GraphicsWorldmapView(QGraphicsView):
     def __init__(self, widget):

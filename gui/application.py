@@ -1,6 +1,7 @@
 from typing import Optional, NoReturn, List, Tuple
 from multiprocessing import Pool, Queue
 import multiprocessing as mp
+import copy
 
 from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint, pyqtSignal, pyqtBoundSignal, pyqtSlot, \
     QObject, QEvent
@@ -18,6 +19,7 @@ from utils.log import get_logger
 from gui.progressbar_widget import ProgressBar
 from gui.signal_slots import SignalSlot
 from pympler import asizeof
+from PIL import Image
 from settings import RESOURCES_DIR
 
 # !TODO:check sprite logic on; coastal adjacency, river types
@@ -112,6 +114,7 @@ class MainApplication(QApplication, SignalSlot):
         # Connect world menu
         self.main_window.ui.actionRemovePrimitives.triggered.connect(self.remove_primitives)
         self.main_window.ui.actionWorldinfo.triggered.connect(self.show_world_summary)
+        # self.main_window.ui.actionShiftone.triggered.connect(self.shift_region)
 
         # Connect sprite rebuild signal
         self.rebuild_sprite_signal.connect(self.recreate_sprite_slot)
@@ -153,7 +156,7 @@ class MainApplication(QApplication, SignalSlot):
                 self.worldmap.regions[region_id].world_object_id = 0
             if self.paint_id == 1:
                 self.worldmap.regions[region_id].climate_id = 1
-                self.worldmap.regions[region_id].relief_id = 0
+                self.worldmap.regions[region_id].relief_id = 1
                 self.worldmap.regions[region_id].vegetation_id = 0
                 self.worldmap.regions[region_id].water_id = 0
                 self.worldmap.regions[region_id].world_object_id = 0
@@ -175,6 +178,73 @@ class MainApplication(QApplication, SignalSlot):
             self.message_box.setText('No region data present.')
             self.message_box.setIcon(QMessageBox.Critical)
             self.message_box.show()
+
+    # def shift_region(self):
+    #     for region in self.worldmap.regions:
+    #         region.climate_id = 0
+    #         region.relief_id = 0
+    #         region.world_object_id = 0
+    #         region.vegetation_id = 0
+    #         region.water_id = 0
+    #     for region in self.worldmap.regions:
+    #         self.worldmap.create_region_sprite(region.region_id, self.scale, signal_flag=False)
+
+    def shift_region(self):
+        img_climate = Image.open('europe_ymir.png')
+        img_relief = Image.open('europe_relief.png')
+        img_rivers = Image.open('europe_rivers.png')
+        width = img_climate.size[0]/100
+        height = img_climate.size[1]/70
+        templist = []
+        templist_p = []
+        templist_r = []
+        for region in self.worldmap.regions:
+            x = (region.x + 0.5) * width
+            y = (region.y + 0.5) * height
+
+
+            pixel_climate = img_climate.getpixel((x,y))
+            pixel_relief = img_relief.getpixel((x,y))
+            pixel_rivers = img_rivers.getpixel((x, y))
+            templist.append(pixel_climate)
+            templist_p.append(pixel_relief)
+            templist_r.append(pixel_rivers)
+            if pixel_climate == (0,0,0,0):
+                region.climate_id = 0
+            elif pixel_climate == (0, 77, 0, 255):
+                region.climate_id = 1
+            elif pixel_climate == (0, 118, 132, 255):
+                region.climate_id = 2
+            elif pixel_climate == (210, 0, 179, 255):
+                region.climate_id = 3
+            elif pixel_climate == (0, 255, 0, 255):
+                region.climate_id = 4
+            elif pixel_climate == (215, 129, 0, 255):
+                region.climate_id = 5
+            elif pixel_climate == (107, 107, 107, 255):
+                region.climate_id = 6
+            elif pixel_climate == (123, 0, 255, 255):
+                region.climate_id = 7
+            elif pixel_climate == (223, 223, 0, 255):
+                region.climate_id = 8
+
+            if pixel_relief == (255, 85, 0, 255):
+                region.relief_id = 4
+            elif pixel_relief == (0, 21, 255, 255):
+                region.relief_id = 3
+
+            if pixel_rivers == (0, 255, 251, 255):
+                region.water_id = 3
+            elif pixel_rivers == (11, 0, 255, 255):
+                region.water_id = 1
+            # self.worldmap.create_region_sprite(region.region_id, self.scale, False)
+
+        self.worldmap.create_all_region_sprites()
+        temp_sortlist = set(templist_r)
+        # pixel_climate = img.getpixel((1,1))
+
+
+
 
     def show_world_summary(self):
         """Menu function that gives an summary of the created worldmap"""

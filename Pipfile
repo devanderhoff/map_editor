@@ -10,6 +10,7 @@ nptyping = "*"
 toml = "*"
 pyqt5-stubs = "==5.14.2.2"
 numpy = "==1.19.3"
+pandas = "*"
 
 [dev-packages]
 
