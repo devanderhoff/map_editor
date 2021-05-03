@@ -4,7 +4,6 @@ from ruamel.yaml import YAML
 from pathlib import Path
 from typing import Any, Dict, List
 import itertools
-from tabulate import tabulate
 from tqdm import tqdm
 import shutil
 from utils.log import get_logger
@@ -19,16 +18,9 @@ def product_dict(**kwargs):
         yield dict(zip(keys, instance))
 
 
-def to_fwf(df: pd.DataFrame, tgt_path: Path):
-    """Outputs Pandas dataframe as fixed width table file."""
-    content = tabulate(df.values.tolist(), list(df.columns), tablefmt="plain")
-    with open(tgt_path, "w") as fwf_filehandle:
-        fwf_filehandle.write(content)
-
-
 class TileTypeOverlayConfigGenerator:
     TILE_CONFIG_PATH: Path = Path(__file__).parent.joinpath('terrain_type_mapping.yaml')
-    OUTPUT_TILE_SCORE_PATH: Path = Path(__file__).parent.joinpath('subtile_combination_scores.fwf')
+    OUTPUT_TILE_SCORE_PATH: Path = Path(__file__).parent.joinpath('subtile_combination_scores.tsv')
     PENALTY_COLNAME = 'COMBO_PENALTY'
 
     def __init__(self, random_initial_penalties: bool = True):
@@ -46,7 +38,7 @@ class TileTypeOverlayConfigGenerator:
 
         self.backup_if_exists(tgt_path=tgt_path)
 
-        to_fwf(df=self.cfg_combo_dframe, tgt_path=tgt_path)
+        self.cfg_combo_dframe.to_csv(path_or_buf=tgt_path, sep='\t')
 
         logger.info("Saved combo dataframe to %s", str(tgt_path.absolute()))
 
