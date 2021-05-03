@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, Union, List, NoReturn
+from typing import List, NoReturn, Tuple, Union
 
 import numpy as np
 from PIL import Image, ImageQt
@@ -7,6 +7,7 @@ from PyQt5.QtGui import QPixmap
 from numpy import ndarray
 
 from base.colours import Colours
+from base.sprite_mappings import SpriteMappings
 from base.sprites import Sprites
 from settings import RESOURCES_DIR
 from utils.log import get_logger
@@ -18,28 +19,26 @@ class WorldmapSprites:
     WMAP_DIR: Path = Path(RESOURCES_DIR / 'worldmap').resolve()
     WMAP_PP_DIR: Path = WMAP_DIR / 'resources'
 
-    def __init__(self):
+    DEFAULT_CANVAS_SIZE: Tuple[int, int, int] = (225, 300, 4,)
+    DEFAULT_FALLBACK_SPRITE: Image = Image.fromarray(np.zeros(DEFAULT_CANVAS_SIZE).astype(np.uint8))
+
+    def __init__(self, canvas_size: Tuple[int, int, int] = DEFAULT_CANVAS_SIZE):
         """Class containing worldmap sprites and base adjustment logic"""
 
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
-        self.blank_canvas: ndarray = np.ones((225, 300, 4))
-        self.empty_array: ndarray = np.zeros((225, 300, 4))
+        self.blank_canvas: ndarray = np.ones(canvas_size)
+        self.empty_array: ndarray = np.zeros(canvas_size)
         self.empty: Image = Image.fromarray(self.empty_array.astype(np.uint8))
 
         self.COLRS: Colours = Colours(blank_canvas=self.blank_canvas, empty_array=self.empty_array)
         self.SPRITES: Sprites = Sprites(empty=self.empty)
 
+        self.sprite_mappings = SpriteMappings(fallback_sprite=self.empty)
+
         # Crop values
         # self.crop = [(0,0,300,225), (300,0,600,225), (600,0,900,225)]
-
-    # def load_colours(self):
-    #     self.logger.info("Loading colors data into %s", __class__.__name__)
-    #     for clr_attrib_name, clr_attrib in self.colordata.get_color_attributes():
-    #         if clr_attrib_name in self.__dict__:
-    #             self.logger.warning("load_colours overwrote attribute %s that was already defined...", clr_attrib_name)
-    #     self.logger.info("Finished loading colors data into %s", __class__.__name__)
 
     def create_required_sprite(self, climate_id: int, relief_id: int, vegetation_id: int, water_id: int,
                                world_object_id: int, coastal_adjacency: List[int], river_adjacency: List[int],
@@ -127,65 +126,15 @@ class WorldmapSprites:
         return self.SPRITES.RELIEF[relief_id].crop(self.create_crop(self.SPRITES.RELIEF[relief_id])[n]), True
 
     def select_vegetation_sprite(self, vegetation_id: int, climate_id: int, relief_id: int) -> Tuple[type(Image), bool]:
+
+        vegetation_sprite, flag_found = \
+            self.sprite_mappings.get_sprite(sprite_type='VEGETATION',
+                                            climate_id=climate_id,
+                                            vegetation_id=vegetation_id,
+                                            relief_id=relief_id)
+
         n: int = np.random.randint(0, 3)
-        flag_found = False
-        vegetation_sprite: type(Image) = self.empty
-        # if vegetationID == 0:
-        #     vegetationSprite = self.empty
-        if climate_id == 1:
-            if vegetation_id == 0 and relief_id == 0:
-                vegetation_sprite = self.SPRITES.sprite_cont_trees
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-            elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.sprite_cont_forest
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-        elif climate_id == 2:
-            if vegetation_id == 0 and relief_id == 0:
-                vegetation_sprite = self.SPRITES.sprite_oceanic_trees
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-            elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.sprite_oceanic_forest
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-        elif climate_id == 3:
-            if vegetation_id == 0 and relief_id == 0:
-                vegetation_sprite = self.SPRITES.sprite_medi_trees
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-            elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.sprite_medi_forest
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-        elif climate_id == 4:
-            if vegetation_id == 0 and relief_id == 0:
-                vegetation_sprite = self.SPRITES.sprite_tropical_trees
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-            elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.sprite_tropical_forest
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-        elif climate_id == 5:
-            if vegetation_id == 0 and relief_id == 0:
-                vegetation_sprite = self.SPRITES.sprite_arid_trees
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-            elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.sprite_arid_forest
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-        elif climate_id == 7:
-            if vegetation_id == 0 and relief_id == 0:
-                vegetation_sprite = self.SPRITES.sprite_nordic_trees
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
-            elif vegetation_id == 1:
-                vegetation_sprite = self.SPRITES.sprite_nordic_forest
-                vegetation_sprite = vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
-                flag_found = True
+        vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])
         return vegetation_sprite, flag_found
 
     def select_water_sprite(self, water_id: int, river_adjacency: List[int],
@@ -195,7 +144,7 @@ class WorldmapSprites:
         WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
         Note, if water_id is 0 (so no water) this function is NOT called.
          """
-        #! TODO: EVERYTHING AGAIN THIS IS GARBAGE
+        # ! TODO: EVERYTHING AGAIN THIS IS GARBAGE
         # set constants etc.
         n = np.random.randint(0, 3)
         found_flag = False
@@ -372,10 +321,10 @@ class WorldmapSprites:
                         found_flag = True
 
             # If nothing is found return something
-        if water_id in [1,2,3] and not found_flag:
+        if water_id in [1, 2, 3] and not found_flag:
             n = np.random.randint(4)
             temp = [self.SPRITES.sprite_river_start_bottom, self.SPRITES.sprite_river_start_left,
-             self.SPRITES.sprite_river_start_top, self.SPRITES.sprite_river_start_right]
+                    self.SPRITES.sprite_river_start_top, self.SPRITES.sprite_river_start_right]
             water_sprite = temp[n]
             found_flag = True
         return water_sprite, found_flag
