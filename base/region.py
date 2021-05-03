@@ -5,13 +5,12 @@ from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsScene
 from nptyping import NDArray
 
 from utils.log import get_logger
-
+import numpy as np
 # class SignalHolder(QObject):
 #     signal = pyqtSignal(str, int, str, str, str, str, str)
 #
 #     def __init__(self):
 #         super().__init__()
-
 
 class Region(QGraphicsPixmapItem):
     """
@@ -24,7 +23,6 @@ class Region(QGraphicsPixmapItem):
     VEGETATION = ("NONE", "FOREST", )
     WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
     WORLD_OBJECT = ("NONE", "SPAWN",)
-
 
     def __init__(self, x: int, y: int, region_list: List[int], name: str, region_id: int, climate_id: int,
                  relief_id: int, vegetation_id: int, water_id: int, worldobject_id: int, region_info_signal: pyqtSignal):
@@ -75,7 +73,6 @@ class Region(QGraphicsPixmapItem):
 
         # self.signal_holder = SignalHolder()
         self.region_info_signal = region_info_signal
-
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         # self.logger.debug(self.region_id)
