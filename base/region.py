@@ -25,7 +25,6 @@ class Region(QGraphicsPixmapItem):
     WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
     WORLD_OBJECT = ("NONE", "SPAWN",)
 
-
     def __init__(self, x: int, y: int, region_list: List[int], name: str, region_id: int, climate_id: int,
                  relief_id: int, vegetation_id: int, water_id: int, worldobject_id: int, region_info_signal: pyqtSignal):
         # X and Y coordinates start top-left corner.
@@ -75,7 +74,6 @@ class Region(QGraphicsPixmapItem):
 
         # self.signal_holder = SignalHolder()
         self.region_info_signal = region_info_signal
-
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         # self.logger.debug(self.region_id)
