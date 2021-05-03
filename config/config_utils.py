@@ -18,10 +18,11 @@ def product_dict(**kwargs):
         yield dict(zip(keys, instance))
 
 
-class TileTypeOverlayConfigGenerator:
+class TileTypeOverlayConfig:
     TILE_CONFIG_PATH: Path = Path(__file__).parent.joinpath('terrain_type_mapping.yaml')
     OUTPUT_TILE_SCORE_PATH: Path = Path(__file__).parent.joinpath('subtile_combination_scores.tsv')
     PENALTY_COLNAME = 'COMBO_PENALTY'
+    COL_SEP = '\t'
 
     def __init__(self, random_initial_penalties: bool = True):
         self.tile_config: Dict[str, Dict[str, int]] = self.load_tile_config()
@@ -30,20 +31,20 @@ class TileTypeOverlayConfigGenerator:
         self.cfg_combo_dframe: pd.DataFrame = pd.DataFrame()
         self.random_initial_penalties: bool = random_initial_penalties
 
-    def generate_equal_width_config_file(self, tgt_path: Path = OUTPUT_TILE_SCORE_PATH):
+    def generate_config_file(self, tgt_path: Path = OUTPUT_TILE_SCORE_PATH):
 
-        self.cfg_combo_dframe = self.init_combo_dframe()
+        self.cfg_combo_dframe = self._init_combo_dframe()
 
-        self.cfg_combo_dframe = self.fill_dataframe(combo_df=self.cfg_combo_dframe)
+        self.cfg_combo_dframe = self._fill_combo_dframe(combo_df=self.cfg_combo_dframe)
 
-        self.backup_if_exists(tgt_path=tgt_path)
+        self._backup_if_exists(tgt_path=tgt_path)
 
-        self.cfg_combo_dframe.to_csv(path_or_buf=tgt_path, sep='\t')
+        self.cfg_combo_dframe.to_csv(path_or_buf=tgt_path, sep=self.COL_SEP)
 
         logger.info("Saved combo dataframe to %s", str(tgt_path.absolute()))
 
     @staticmethod
-    def backup_if_exists(tgt_path: Path):
+    def _backup_if_exists(tgt_path: Path):
         if tgt_path.exists():
             logger.info(''.join(["Found existing combo dataframe file; ",
                                  "copying current one to backup to prevent overwriting ",
@@ -65,7 +66,7 @@ class TileTypeOverlayConfigGenerator:
                 colnames.append('_'.join([tile_metatype, subtile_type]))
         return colnames
 
-    def init_combo_dframe(self) -> pd.DataFrame:
+    def _init_combo_dframe(self) -> pd.DataFrame:
         colnames = self.get_combo_dframe_column_names()
         subtile_combos = self.get_subtile_combos()
 
@@ -75,8 +76,8 @@ class TileTypeOverlayConfigGenerator:
         cfg_df[self.PENALTY_COLNAME] = cfg_df[self.PENALTY_COLNAME].astype(np.int64)
         return cfg_df
 
-    def fill_dataframe(self,
-                       combo_df: pd.DataFrame) -> pd.DataFrame:
+    def _fill_combo_dframe(self,
+                           combo_df: pd.DataFrame) -> pd.DataFrame:
 
         subtile_combos = self.get_subtile_combos()
 
@@ -91,6 +92,14 @@ class TileTypeOverlayConfigGenerator:
             combo_df.loc[:, self.PENALTY_COLNAME] = np.random.randint(low=1, high=100, size=combo_df.shape[0])
 
         return combo_df
+
+    @classmethod
+    def from_tsv(cls, tsv_path: Path):
+        """Used to load a TileTypeOverlayConfig object from a previously generated .TSV file."""
+        cfg_instance = cls()
+        cls.cfg_combo_dframe = pd.read_csv(sep=cls.COL_SEP)
+
+        return cfg_instance
 
     def load_tile_config(self, path: Path = TILE_CONFIG_PATH) -> Dict[str, Dict[str, int]]:
         """
@@ -109,5 +118,5 @@ class TileTypeOverlayConfigGenerator:
 
 
 if __name__ == '__main__':
-    tov = TileTypeOverlayConfigGenerator()
-    tov.generate_equal_width_config_file()
+    tov = TileTypeOverlayConfig()
+    tov.generate_config_file()
