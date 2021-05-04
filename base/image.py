@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmap
 from numpy import ndarray
 
 from base.colours import Colours
-from base.sprite_mappings import SpriteMappings
+from base.sprite_mappings import SpriteMapperContainer, SpriteMapperVegetation
 from base.sprites import Sprites
 from settings import RESOURCES_DIR
 from utils.log import get_logger
@@ -35,7 +35,11 @@ class WorldmapSprites:
         self.COLRS: Colours = Colours(blank_canvas=self.blank_canvas, empty_array=self.empty_array)
         self.SPRITES: Sprites = Sprites(empty=self.empty)
 
-        self.sprite_mappings = SpriteMappings(fallback_sprite=self.empty)
+        self.sprite_mappers = SpriteMapperContainer(
+            sprite_mappers=[
+                SpriteMapperVegetation(fallback_sprite=self.empty)
+            ]
+        )
 
         # Crop values
         # self.crop = [(0,0,300,225), (300,0,600,225), (600,0,900,225)]
@@ -128,10 +132,10 @@ class WorldmapSprites:
     def select_vegetation_sprite(self, vegetation_id: int, climate_id: int, relief_id: int) -> Tuple[type(Image), bool]:
 
         vegetation_sprite, flag_found = \
-            self.sprite_mappings.get_sprite(sprite_type='VEGETATION',
-                                            climate_id=climate_id,
-                                            vegetation_id=vegetation_id,
-                                            relief_id=relief_id)
+            self.sprite_mappers['VEGETATION'].get_sprite(
+                climate_id=climate_id,
+                vegetation_id=vegetation_id,
+                relief_id=relief_id)
 
         n: int = np.random.randint(0, 3)
         vegetation_sprite.crop(self.create_crop(vegetation_sprite)[n])

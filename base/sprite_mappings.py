@@ -1,17 +1,18 @@
-from typing import Dict, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 
 from PIL import Image, PngImagePlugin
 import numpy as np
 from base.sprites import Sprites
 
 # Type aliases
+from game_objects.map_objs import River
 from utils.utils import default_repr, funcname
 from utils.custom_exceptions import MethodCannotBeCalledOnBaseClassError
 
 Sprite = PngImagePlugin.PngImageFile
 
 
-class SpriteMappingBase:
+class SpriteMapperBase:
 
     NAME: str = 'SpriteMappingBaseClass'
     ID_KEYS: Set[str] = {'example_id', 'another_id', 'someother_id_key'}
@@ -31,7 +32,6 @@ class SpriteMappingBase:
         """
         self.wildcard: str = wildcard
         self.fallback_sprite: Sprite = fallback_sprite
-        self.mapping_namekey: str = 'name'
 
         self.validate_mapping_keys()
 
@@ -50,54 +50,36 @@ class SpriteMappingBase:
                                       "the number of mapping IDs in the ID_KEYS attribute,",
                                       " as they have a one-to-one correspondence."]))
 
-    def get_sprite(self,
-                   sprite_type: str,
-                   **kwargs) -> Tuple[Sprite, bool]:
+    def get_sprite(self, **kwargs) -> Tuple[Sprite, bool]:
         """
         Gets sprite object corresponding to a combination of the relevant IDs.
 
         :returns: Tuple[Sprite, bool] (bool indicates wheter a sprite was found (True) or was empty (False))
         """
-        if type(self) == SpriteMappingBase:
+        if type(self) == SpriteMapperBase:
             raise MethodCannotBeCalledOnBaseClassError
 
         self._validate_get_sprite_kwargs(**kwargs)
 
-        cur_sprite_dict = self._get_spritedict(sprite_type=sprite_type)
         cvr_id_str = ''.join(str(id_) for id_ in (kwargs.values()))
 
         try:
-            return cur_sprite_dict[cvr_id_str], True
+            return self.MAPPING[cvr_id_str], True
         except KeyError:
-            return self.try_wildcard_keys(cvr_id_str=cvr_id_str, sprite_dict=cur_sprite_dict)
+            return self.try_wildcard_keys(cvr_id_str=cvr_id_str)
 
     def try_wildcard_keys(self,
-                          cvr_id_str: str,
-                          sprite_dict: Dict[str, Sprite]) -> Tuple[Sprite, bool]:
+                          cvr_id_str: str) -> Tuple[Sprite, bool]:
 
         for istr in reversed(range(len(cvr_id_str))):
 
             cvr_id_w_wildcard = f"{cvr_id_str[:istr]}{self.wildcard * (len(cvr_id_str) - istr)}"
             try:
-                return sprite_dict[cvr_id_w_wildcard], True
+                return self.MAPPING[cvr_id_w_wildcard], True
             except KeyError:
                 continue
         else:
             return self.fallback_sprite, False
-
-    @classmethod
-    def _get_spritedict(cls, sprite_type: str) -> Dict[str, Sprite]:
-        sprite_type_uppercase = sprite_type.upper()
-
-        if hasattr(cls, sprite_type_uppercase):
-            return getattr(cls, sprite_type_uppercase)
-
-        else:
-            raise AttributeError(''.join([
-                f"{cls.__name__}() does not have a sprite dictionary for ",
-                f"sprite type {sprite_type!r} nor {sprite_type_uppercase!r}... ",
-                f"""Valid alternatives: ['{", ".join(attr for attr in dir(cls)
-                                                     if not '_' in attr and attr.isupper())}']"""]))
 
     def _validate_get_sprite_kwargs(self, **kwargs):
         if set(kwargs.keys()) != set(self.ID_KEYS):
@@ -110,7 +92,32 @@ class SpriteMappingBase:
         return default_repr(self)
 
 
-class SpriteMappingVegetation(SpriteMappingBase):
+class SpriteMapperContainer:
+
+    def __init__(self, sprite_mappers: List[SpriteMapperBase]):
+        self._mappers = {smap.NAME: smap for smap in sprite_mappers}
+
+    def __getitem__(self, key):
+        for keyvariant in (key, key.lower(), key.upper()):
+            try:
+                return self._mappers[keyvariant]
+            except KeyError as err:
+                continue
+        raise KeyError(f"{type(self).__name__} does not contain a SpriteMapper for key {key!r}") from err
+
+    def __delitem__(self, key):
+        del self._mappers[key]
+
+    def __contains__(self, key_or_instance):
+        if type(key_or_instance) == str:
+            return key_or_instance in self._mappers
+        elif isinstance(key_or_instance, SpriteMapperBase):
+            return key_or_instance in self._mappers.values()
+
+
+class SpriteMapperVegetation(SpriteMapperBase):
+
+    NAME: str = 'VEGETATION'
 
     ID_KEYS: Set[str] = {'climate_id', 'vegetation_id', 'relief_id'}
 
@@ -139,7 +146,6 @@ class SpriteMappingVegetation(SpriteMappingBase):
                          wildcard=wildcard)
 
     def get_sprite(self,
-                   sprite_type: str,
                    climate_id: int,
                    vegetation_id: int,
                    relief_id: int) -> Tuple[Sprite, bool]:
@@ -148,32 +154,49 @@ class SpriteMappingVegetation(SpriteMappingBase):
 
         :returns: Tuple[Sprite, bool] (bool indicates wheter a sprite was found (True) or was empty (False))
         """
-        kwargs = {'sprite_type': sprite_type, 'climate_id': climate_id,
-                  'vegetation_id': vegetation_id, 'relief_id': relief_id}
-        return super().get_sprite(sprite_type=sprite_type, **kwargs)
+        return super().get_sprite(**{'climate_id': climate_id, 'vegetation_id': vegetation_id, 'relief_id': relief_id})
 
 
-class SpriteMappingRiver(SpriteMappingBase):
-    ID_KEYS: Set[str] = {'water_id', 'river_adjacency', 'coastal_adjacency'}
+class SpriteMapperRiver(SpriteMapperBase):
+    NAME = 'RIVER'
+    ID_KEYS: Set[str] = {'water_id',
+                         'river_id',
+                         'next_to_coast',
+                         'crossing',
+                         'solo_river',
+                         'coastal_adjacency',
+                         'river_adjacency'}
 
     MAPPING: Dict[str, Sprite] = {
-        '4**': Sprites.sprite_lake,
-        '5**': Sprites.sprite_swamp,
-        '6**': Sprites.sprite_oceanic_trees,
-        '201': Sprites.sprite_oceanic_forest,
-        '300': Sprites.sprite_medi_trees,
-        '31*': Sprites.sprite_medi_forest,
-        '400': Sprites.sprite_tropical_trees,
-        '41*': Sprites.sprite_tropical_forest,
-        '500': Sprites.sprite_arid_trees,
-        '51*': Sprites.sprite_arid_forest,
-        '700': Sprites.sprite_nordic_trees,
-        '71*': Sprites.sprite_nordic_forest,
+
     }
+
+    def get_sprite(self,
+                   water_id: int,
+                   river_adjacency: List[int],
+                   coastal_adjacency: List[int]) -> Tuple[Sprite, bool]:
+        """
+        Gets sprite object corresponding to a combination of water ID, river adjacency and coastal adjacency.
+
+        :returns: Tuple[Sprite, bool] (bool indicates wheter a sprite was found (True) or was empty (False))
+        """
+
+
+        river = River(river_adjacency=river_adjacency, coastal_adjacency=coastal_adjacency)
+
+        river_encoding_str = river.encode()
+
+        #return super().get_sprite(**{'water_id': water_id,
+         #                            'river_id': river_adjacency,
+          #                           'coastal_id': coastal_adjacency})
+
+
+
+
 
 
 # water_id, river_adjacency, coastal_adjacency
 
 if __name__ == '__main__':
     fbs = Image.fromarray(np.zeros((225, 300, 4,)).astype(np.uint8))
-    SpriteMappingBase(fallback_sprite=fbs)
+    SpriteMapperBase(fallback_sprite=fbs)
