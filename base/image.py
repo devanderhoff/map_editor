@@ -50,10 +50,12 @@ class WorldmapSprites:
         # Background first
         # scale = (0.5, 0.5,)
         background, flag_ground = self.select_background(climate_id)
+
         if climate_id != 0:
             relief, flag_relief = self.select_relief_sprite(relief_id)
         else:
             flag_relief = False
+
         grass, flag_grass = self.add_grass_sprite(climate_id, relief_id)
         vegatation, flag_veg = self.select_vegetation_sprite(vegetation_id, climate_id, relief_id)
 
@@ -61,15 +63,14 @@ class WorldmapSprites:
             coast, flag_coast, second_coast, second_flagcoast = self.select_coast_sprite(coastal_adjacency)
             corner, flag_corner, second_corner, second_flagcorner = self.select_corner_sprite(coastal_adjacency)
         else:
-            flag_coast = False
-            flag_corner = False
-            second_flagcorner = False
+            flag_coast, flag_corner, second_flagcorner = False, False, False
 
         if water_id != 0:
             water, flag_water = self.select_water_sprite(water_id, river_adjacency, coastal_adjacency)
         else:
             flag_water = False
-        if water_id != 0 or water_id != 4 or water_id != 5:
+
+        if water_id not in (0, 4, 5):
             river_size, flag_river = self.select_river_size_sprite(water_id)
         else:
             flag_river = False
@@ -78,26 +79,35 @@ class WorldmapSprites:
 
         if not flag_ground:
             self.logger.warning('NO BACKGROUND FOUND')
+
         background_image = Image.fromarray(background.astype(np.uint8))
         # background_image = background
+
         if flag_relief:
             background_image.alpha_composite(relief)
+
         if flag_grass:
             background_image.alpha_composite(grass)
+
         if flag_coast:
             background_image.alpha_composite(coast)
             if second_flagcoast:
                 background_image.alpha_composite(second_coast)
+
         if flag_corner:
             background_image.alpha_composite(corner)
             if second_flagcorner:
                 background_image.alpha_composite(second_corner)
+
         if flag_veg:
             background_image.alpha_composite(vegatation)
+
         if flag_water:
             background_image.alpha_composite(water)
+
         if flag_river:
             background_image.alpha_composite(river_size)
+
         if flagPrim:
             background_image.alpha_composite(prim)
 
@@ -108,24 +118,19 @@ class WorldmapSprites:
         return background_image
 
     def select_river_size_sprite(self, water_id):
-        sprite = self.empty
-        found_flag = False
-        if water_id in [1, 2, 3]:
-            if water_id == 1:
-                sprite = self.SPRITES.sprite_river_small
-                found_flag = True
-            elif water_id == 2:
-                sprite = self.SPRITES.sprite_river_medium
-                found_flag = True
-            elif water_id == 3:
-                sprite = self.SPRITES.sprite_river_large
-                found_flag = True
-        return sprite, found_flag
 
-    def select_background(self, climate_id) -> Tuple[ndarray, bool]:
+        river_sprite_dict = {1: self.SPRITES.sprite_river_small,
+                             2: self.SPRITES.sprite_river_medium,
+                             3: self.SPRITES.sprite_river_large}
+        try:
+            return river_sprite_dict[water_id], True
+        except KeyError:
+            return self.empty, False
+
+    def select_background(self, climate_id: int) -> Tuple[ndarray, bool]:
         return self.COLRS.BACKGROUND[climate_id], True
 
-    def select_relief_sprite(self, relief_id) -> Tuple[type(Image), bool]:
+    def select_relief_sprite(self, relief_id: int) -> Tuple[type(Image), bool]:
         n = np.random.randint(0, 3)
         return self.SPRITES.RELIEF[relief_id].crop(self.create_crop(self.SPRITES.RELIEF[relief_id])[n]), True
 
@@ -325,10 +330,10 @@ class WorldmapSprites:
                         found_flag = True
 
             # If nothing is found return something
-        if water_id in [1, 2, 3] and not found_flag:
+        if water_id in [1,2,3] and not found_flag:
             n = np.random.randint(4)
             temp = [self.SPRITES.sprite_river_start_bottom, self.SPRITES.sprite_river_start_left,
-                    self.SPRITES.sprite_river_start_top, self.SPRITES.sprite_river_start_right]
+             self.SPRITES.sprite_river_start_top, self.SPRITES.sprite_river_start_right]
             water_sprite = temp[n]
             found_flag = True
         return water_sprite, found_flag
