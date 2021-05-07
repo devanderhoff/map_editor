@@ -1,5 +1,5 @@
 # map_editor
-A work in progress map editor for the video-game Ymir (https://store.steampowered.com/app/378360/Ymir/)
+A work in progress map editor for the videogame Ymir (https://store.steampowered.com/app/378360/Ymir/)
 
 If you have any suggestions please let me know by making an issue or via the official Ymir discord (https://discord.com/invite/cwJD5Ds)
 
