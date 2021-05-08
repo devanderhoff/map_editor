@@ -1,26 +1,24 @@
-from typing import Optional, NoReturn, List, Tuple
-from multiprocessing import Pool, Queue
-import multiprocessing as mp
-import copy
+from __future__ import annotations
 
-from PyQt5.QtCore import QPointF, QRect, QMetaObject, QCoreApplication, QPoint, pyqtSignal, pyqtBoundSignal, pyqtSlot, \
-    QObject, QEvent
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QWidget, \
-    QHBoxLayout, QPushButton, QMenuBar, QMenu, QStatusBar, QAction, QApplication, QMainWindow, QGraphicsPixmapItem, \
-    QFileDialog, QErrorMessage, QMessageBox, QProgressBar, QDialog, QInputDialog, QGraphicsSceneHoverEvent
-from PyQt5.QtGui import QTransform, QMouseEvent
 from pathlib import Path
-from gui.create_new_world_dialog import NewWorldDialog
-from gui.MainwindowUI import MainWindow
-from base.world import World
-from base.region import Region
-from settings import DEFAULT_WRLD_SZ_X, DEFAULT_WRLD_SZ_Y, _REGION_IMAGE_HEIGHT, _REGION_IMAGE_WIDTH
-from utils.log import get_logger
-from gui.progressbar_widget import ProgressBar
-from gui.signal_slots import SignalSlot
-from pympler import asizeof
+from typing import Dict, List, TYPE_CHECKING, Tuple
+
 from PIL import Image
-from settings import RESOURCES_DIR
+from PyQt5.QtCore import QPoint, QPointF, pyqtSignal
+from PyQt5.QtGui import QTransform
+from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsScene, QMessageBox
+
+from base.region import Region
+from base.world import World, WorldSummary
+from gui.MainwindowUI import MainWindow
+from gui.create_new_world_dialog import NewWorldDialog
+from gui.signal_slots import SignalSlot
+from settings import RESOURCES_DIR, _REGION_IMAGE_HEIGHT, _REGION_IMAGE_WIDTH
+from utils.log import get_logger
+
+if TYPE_CHECKING:
+    from PyQt5.QtWidgets import QGraphicsSceneMouseEvent, QGraphicsPixmapItem
+
 
 # !TODO:check sprite logic on; coastal adjacency, river types
 # !TODO:make override checks on worldmap edit
@@ -30,25 +28,50 @@ from settings import RESOURCES_DIR
 
 
 class MainApplication(QApplication, SignalSlot):
-    rebuild_sprite_signal = pyqtSignal(int)
-    region_info_signal = pyqtSignal(str, int, str, str, str, str, str)
+    rebuild_sprite_signal: pyqtSignal = pyqtSignal(int)
+    region_info_signal: pyqtSignal = pyqtSignal(str, int, str, str, str, str, str)
+
+    PX_MAPPINGS: Dict[str, Dict[Tuple[int, int, int, int], int]] = {
+        'climate_id':
+            {(0, 0, 0, 0,): 0,
+             (0, 77, 0, 255,): 1,
+             (0, 118, 132, 255,): 2,
+             (210, 0, 179, 255,): 3,
+             (0, 255, 0, 255,): 4,
+             (215, 129, 0, 255,): 5,
+             (107, 107, 107, 255,): 6,
+             (123, 0, 255, 255,): 7,
+             (223, 223, 0, 255,): 8,
+             },
+        'relief_id': {
+            (255, 85, 0, 255,): 4,
+            (0, 21, 255, 255,): 3,
+            },
+        'rivers_id': {
+            (0, 255, 251, 255,): 3,
+            (11, 0, 255, 255,): 1
+            },
+        }
 
     def __init__(self, argv: List[str]):
         super().__init__(argv)
 
         # Initialize "world editor tool" attribute
-        self.paint_id = 0
-        self.brush_id = 0
-        self.brushes = ['climate', 'relief', 'vegetation', 'water', 'spawn']
+        self.paint_id: int = 0
+        self.brush_id: int = 0
+        self.brushes: List[str] = ['climate', 'relief', 'vegetation', 'water', 'spawn']
 
-        self.logger = get_logger(f'{__name__}: {self.__class__.__name__}')
-        self.world_loaded = False
+        self.logger = get_logger(f'{__name__}: {type(self).__name__}')
+        self.world_loaded: bool = False
+
+        self.scale: Tuple[int, int] = (1, 1,)
 
         # Initialize GUI
-        self.main_window = MainWindow()
-        self.graphics_scene_map = GraphicsWorldmapScene(self.rebuild_sprite_signal)
+        self.main_window: MainWindow = MainWindow()
+        self.graphics_scene_map: GraphicsWorldmapScene = GraphicsWorldmapScene(self.rebuild_sprite_signal)
+
         self.main_window.ui.graphics_view_map.setScene(self.graphics_scene_map)
-        self.message_box = QMessageBox()  # Common message box
+        self.message_box: QMessageBox = QMessageBox()  # Common message box
 
         # Create new world dialog
         self.new_world_ui = NewWorldDialog()
@@ -117,11 +140,13 @@ class MainApplication(QApplication, SignalSlot):
         # self.main_window.ui.actionShiftone.triggered.connect(self.shift_region)
 
         # Connect sprite rebuild signal
+        # noinspection PyUnresolvedReferences
         self.rebuild_sprite_signal.connect(self.recreate_sprite_slot)
+        # noinspection PyUnresolvedReferences
         self.region_info_signal.connect(self.display_region_info)
 
         # Create worldmap logic and send signals "downstream"
-        self.worldmap = World(self.region_info_signal)
+        self.worldmap: World = World(self.region_info_signal)
 
         # Open application
         self.main_window.show()
@@ -130,8 +155,16 @@ class MainApplication(QApplication, SignalSlot):
                             water_str: str, world_object_str: str):
         """Slot that provides logic to populate the region information display"""
         self.logger.debug(f'Display region information of region {name}, with region ID {region_id}')
-        text = f'Region name: {name} \nRegion ID: {region_id} \nClimate: {climate_str} \nRelief: {relief_str} \n' \
-               f'Vegetation: {vegetation_str} \nWater: {water_str} \nPrimitive: {world_object_str} \n------------------'
+
+        text = ' \n'.join([f'Region name: {name}',
+                           f'Region ID: {region_id}',
+                           f'Climate: {climate_str}',
+                           f'Relief: {relief_str}',
+                           f'Vegetation: {vegetation_str}',
+                           f'Water: {water_str}',
+                           f'Primitive: {world_object_str}',
+                           '------------------'])
+
         self.main_window.ui.textBrowser.setPlainText(text)
 
     def recreate_sprite_slot(self, region_id: int):
@@ -189,65 +222,67 @@ class MainApplication(QApplication, SignalSlot):
     #     for region in self.worldmap.regions:
     #         self.worldmap.create_region_sprite(region.region_id, self.scale, signal_flag=False)
 
-    def shift_region(self):
-        img_climate = Image.open('europe_ymir.png')
-        img_relief = Image.open('europe_relief.png')
-        img_rivers = Image.open('europe_rivers.png')
-        width = img_climate.size[0]/100
-        height = img_climate.size[1]/70
-        templist = []
-        templist_p = []
-        templist_r = []
+    def set_region_id_from_pixels(self, region: Region,
+                                  px_climate: Image, px_relief: Image, px_rivers: Image,
+                                  id_attrnames: Tuple[str, ...] = ('climate_id', 'relief_id', 'water_id',)):
+        for attrname_an_px_map_key, px_tuple in zip(id_attrnames, (px_climate, px_relief, px_rivers)):
+            try:
+                tempmap = self.PX_MAPPINGS[attrname_an_px_map_key]
+            except KeyError as err:
+                self.logger.error("could not find key %s scorresponding to %s for in PX_CLIMATE_MAPPING: %s.",
+                                  attrname_an_px_map_key, attrname_an_px_map_key.replace('_', ''), err)
+                raise SystemExit(1)
+            try:
+                setattr(region, attrname_an_px_map_key, tempmap[px_tuple])
+            except KeyError as err:
+                self.logger.error("could not find pixel key %s in PX_CLIMATE_MAPPING[%s]: %s.",
+                                  str(px_tuple), attrname_an_px_map_key, err)
+                raise SystemExit(1)
+            except AttributeError as err:
+                self.logger.error("'region' object does not have an attribute %s: %s.",
+                                  attrname_an_px_map_key, err)
+                raise SystemExit(1)
+
+    def shift_region(self,
+                     climate_img_fname: str = 'europe_ymir.png',
+                     relief_img_fname: str = 'europe_relief.png',
+                     rivers_img_fname: str = 'europe_rivers.png'):
+
+        img_climate: Image = Image.open(climate_img_fname)
+        img_relief: Image = Image.open(relief_img_fname)
+        img_rivers: Image = Image.open(rivers_img_fname)
+
+        width: float = img_climate.size[0] / 100
+        height: float = img_climate.size[1] / 70
+
+        tmplist_px_climate = []
+        tmplist_px_relief = []
+        templist_px_rivers = []
+
         for region in self.worldmap.regions:
             x = (region.x + 0.5) * width
             y = (region.y + 0.5) * height
 
-
-            pixel_climate = img_climate.getpixel((x,y))
-            pixel_relief = img_relief.getpixel((x,y))
+            pixel_climate = img_climate.getpixel((x, y))
+            pixel_relief = img_relief.getpixel((x, y))
             pixel_rivers = img_rivers.getpixel((x, y))
-            templist.append(pixel_climate)
-            templist_p.append(pixel_relief)
-            templist_r.append(pixel_rivers)
-            if pixel_climate == (0,0,0,0):
-                region.climate_id = 0
-            elif pixel_climate == (0, 77, 0, 255):
-                region.climate_id = 1
-            elif pixel_climate == (0, 118, 132, 255):
-                region.climate_id = 2
-            elif pixel_climate == (210, 0, 179, 255):
-                region.climate_id = 3
-            elif pixel_climate == (0, 255, 0, 255):
-                region.climate_id = 4
-            elif pixel_climate == (215, 129, 0, 255):
-                region.climate_id = 5
-            elif pixel_climate == (107, 107, 107, 255):
-                region.climate_id = 6
-            elif pixel_climate == (123, 0, 255, 255):
-                region.climate_id = 7
-            elif pixel_climate == (223, 223, 0, 255):
-                region.climate_id = 8
 
-            if pixel_relief == (255, 85, 0, 255):
-                region.relief_id = 4
-            elif pixel_relief == (0, 21, 255, 255):
-                region.relief_id = 3
+            tmplist_px_climate.append(pixel_climate)
+            tmplist_px_relief.append(pixel_relief)
+            templist_px_rivers.append(pixel_rivers)
 
-            if pixel_rivers == (0, 255, 251, 255):
-                region.water_id = 3
-            elif pixel_rivers == (11, 0, 255, 255):
-                region.water_id = 1
+            self.set_region_id_from_pixels(region=region,
+                                           px_climate=pixel_climate, px_relief=pixel_relief, px_rivers=pixel_rivers)
+
             # self.worldmap.create_region_sprite(region.region_id, self.scale, False)
 
         self.worldmap.create_all_region_sprites()
-        temp_sortlist = set(templist_r)
+        # temp_sortlist = set(templist_px_rivers)
         # pixel_climate = img.getpixel((1,1))
-
-
-
 
     def show_world_summary(self):
         """Menu function that gives an summary of the created worldmap"""
+
         # CLIMATES = ("SEA", "CONTINENTAL", "OCEANIC", "MEDITERRANEAN", "TROPICAL", "ARID", "DESERT", "NORDIC",
         # "POLAR", "UNKNOWN",)
         # RELIEF = ("NONE", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS",)
@@ -255,35 +290,8 @@ class MainApplication(QApplication, SignalSlot):
         # WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
         # WORLD_OBJECT = ("NONE", "SPAWN",)
 
-        climate_count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        climate_count_spawns = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        relief_count = [0, 0, 0, 0, 0]
-        forrest_count = 0
-        water_count = [0, 0, 0, 0, 0, 0]
-
         if self.worldmap.regions:
-            for region in self.worldmap.regions:
-                climate_count[region.climate_id] += 1
-                if region.world_object_id == 1:
-                    climate_count_spawns[region.climate_id] += 1
-                relief_count[region.relief_id] += 1
-                if region.vegetation_id == 1:
-                    forrest_count += 1
-                water_count[region.water_id] += 1
-
-            # Create string
-            text = f'Climate count \n-------------------\n Sea = {climate_count[0]} \nContinental = {climate_count[1]} \nOceanic = ' \
-                   f'{climate_count[2]} \nMediterranean = {climate_count[3]} \nTropical = {climate_count[4]} \nArid = {climate_count[5]} ' \
-                   f'\nDesert = {climate_count[6]} \nNordic = {climate_count[7]} \nPolar = {climate_count[8]}\nUnknown = {climate_count[9]} \n\nRelief count \n-------------------\n' \
-                   f'Flat = {relief_count[0]}\nPlains = {relief_count[1]}\nRocky = {relief_count[2]}\nHills = {relief_count[3]}\n' \
-                   f'Mountains = {relief_count[4]}\nForrest count = {forrest_count}\n\nWater counts\n-------------------\nRiver small = {water_count[1]}\nRiver medium = {water_count[2]}\n' \
-                   f'River large = {water_count[3]}\nLakes = {water_count[4]}\nSwamps = {water_count[4]}\n\nPrimitives per climate\n-------------------\n' \
-                   f'Sea primitives = {climate_count_spawns[0]}\nContinental primitives = {climate_count_spawns[1]}\nOceanic primitives = {climate_count_spawns[2]}\n' \
-                   f'Mediterranean primitives = {climate_count_spawns[3]}\nTropical primitives = {climate_count_spawns[4]}\n' \
-                   f'Arid primitives = {climate_count_spawns[5]}\nDesert primitives = {climate_count_spawns[6]}\nNordic primitives = {climate_count_spawns[7]}\nPolar primitives = {climate_count_spawns[8]}' \
-                   f'\nUnknown primitives = {climate_count_spawns[9]}'
-
-            self.message_box.setText(text)
+            self.message_box.setText(WorldSummary(regions=self.worldmap.regions).string)
             self.message_box.setIcon(QMessageBox.Information)
             self.message_box.show()
         else:
@@ -299,12 +307,15 @@ class MainApplication(QApplication, SignalSlot):
 
         if self.save_file_dialog.result() == 1 and self.worldmap.regions:
             self.worldmap.rebuild_region_list()
+
             if min(self.worldmap.region_info_lst) == -1:
-                self.message_box.setText('There are regions of type "Unknown" still present, abort')
+                self.message_box.setText('There are regions of type "Unknown" still present, aborting..')
                 self.message_box.setIcon(QMessageBox.Critical)
                 self.message_box.show()
                 return
+
             if '.ybin' in filename and self.worldmap.region_info_lst:
+
                 with open(filename, mode='wb') as file:
                     self.logger.debug('Saving worldmap to file, please wait..')
                     file.write(bytearray(self.worldmap.region_info_lst))
@@ -324,14 +335,14 @@ class MainApplication(QApplication, SignalSlot):
             self.message_box.show()
             return
 
-    def load_tiny_world(self):
+    def load_tiny_world(self, scale):
         """Convenience function to load in pre-build tiny world for quick editting."""
-        DIR = Path(RESOURCES_DIR).resolve()
-        filename = DIR / 'world.ybin'
+        world_file_path = Path(RESOURCES_DIR).joinpath('world').with_suffix('.ybin').absolute()
         self.graphics_scene_map.clear()
         self.worldmap.regions = []
-        self.worldmap.load_world(filename)
+        self.worldmap.load_world(world_file_path)
         self.scale = (1, 1,)
+
         for region in self.worldmap.regions:
             x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * self.scale[0],
                                                     _REGION_IMAGE_HEIGHT * self.scale[1])
@@ -343,8 +354,9 @@ class MainApplication(QApplication, SignalSlot):
         self.open_file_dialog.exec_()
         filename = self.open_file_dialog.selectedFiles()
         filename = filename[0] if filename else None
+
         if not filename:
-            self.logger.debug("File loading dialog was cancelled; no world will be loaded")
+            self.logger.debug("File loading dialog was cancelled; no world will be loaded.")
             return
 
         if self.open_file_dialog.result() == 1:
@@ -360,7 +372,7 @@ class MainApplication(QApplication, SignalSlot):
                     self.graphics_scene_map.create_scene_items_from_world(region, pos)
 
             else:
-                self.message_box.setText('You have to load an .ybin world file')
+                self.message_box.setText('You have to load an .ybin world file.')
                 self.message_box.setIcon(QMessageBox.Critical)
                 self.message_box.show()
         else:
@@ -369,6 +381,7 @@ class MainApplication(QApplication, SignalSlot):
     def new_world(self):
         # !TODO: Reset view after creating a new scene.
         self.new_world_ui.exec_()
+
         if self.new_world_ui.result() == 0:
             return
         elif self.new_world_ui.result() == 1:
@@ -381,14 +394,15 @@ class MainApplication(QApplication, SignalSlot):
             self.graphics_scene_map.clear()
             self.scale = (1, 1,)
             self.worldmap.create_new_world(name, width, height, random_climate, self.scale)
+
             for region in self.worldmap.regions:
-                x, y = region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * self.scale[0],
-                                                        _REGION_IMAGE_HEIGHT * self.scale[1])
-                pos = QPointF(x, y)
-                self.graphics_scene_map.create_scene_items_from_world(region, pos)
+                pos = QPointF(*region.region_xy_to_scene_coords(_REGION_IMAGE_WIDTH * self.scale[0],
+                                                                _REGION_IMAGE_HEIGHT * self.scale[1]))
+                self.graphics_scene_map.create_scene_items_from_world(item=region, pos=pos)
 
 
 class GraphicsWorldmapScene(QGraphicsScene):
+
     def __init__(self, rebuild_sprite_signal):
         super().__init__()
 
@@ -405,7 +419,7 @@ class GraphicsWorldmapScene(QGraphicsScene):
         self.addItem(item)
         item.setPos(pos)
 
-    def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         if self.pressed:
             item = self.itemAt(event.scenePos(), QTransform())
             same = item == self.current_item
@@ -416,7 +430,7 @@ class GraphicsWorldmapScene(QGraphicsScene):
 
         return super(GraphicsWorldmapScene, self).mouseMoveEvent(event)
 
-    def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         if event.button() == 1:
             item = self.itemAt(event.scenePos(), QTransform())
             if isinstance(item, Region):
@@ -424,5 +438,5 @@ class GraphicsWorldmapScene(QGraphicsScene):
                 self.current_item = item
                 self.pressed = True
 
-    def mouseReleaseEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         self.pressed = False

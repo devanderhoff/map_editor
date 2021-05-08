@@ -1,11 +1,11 @@
-from typing import Optional, List, Any
-import time
-from PyQt5.QtCore import pyqtSignal,pyqtBoundSignal, QObject
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsObject, QGraphicsSceneMouseEvent
+from typing import Optional, List, Any, Union
+
+from PIL.Image import Image
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsSceneHoverEvent
 from nptyping import NDArray
 
 from utils.log import get_logger
-import numpy as np
 # class SignalHolder(QObject):
 #     signal = pyqtSignal(str, int, str, str, str, str, str)
 #
@@ -27,7 +27,6 @@ class Region(QGraphicsPixmapItem):
     WORLD_OBJECT = ("NONE", "SPAWN",)
 
     def __init__(self, x: int, y: int,
-                 region_list: List[int],
                  name: str,
                  region_id: int,
                  climate_id: int,
@@ -35,6 +34,7 @@ class Region(QGraphicsPixmapItem):
                  vegetation_id: int,
                  water_id: int,
                  worldobject_id: int,
+                 region_bytes: int,
                  region_info_signal: pyqtSignal):
         # X and Y coordinates start top-left corner.
         super().__init__()
@@ -42,11 +42,14 @@ class Region(QGraphicsPixmapItem):
         if not hasattr(self, 'logger'):
             self.logger = get_logger(__class__.__name__)
 
+        self.region_bytes = region_bytes
+        #  !TODO: region_bytes attribute in Region class is passed but not used?
+
         self.init_flag = False
         self.x: int = x  # base x
         self.y: int = y  # base y
 
-        self.region_list: List[int] = [None, None, None, None, None]
+        self.region_list: List[Union[int, None]] = [None, None, None, None, None]
 
         self.image_coords: Optional[Any] = None
 
@@ -78,16 +81,20 @@ class Region(QGraphicsPixmapItem):
         # self.region_sprite = QGraphicsPixmapItem()
         self.region_sprite_loaded: bool = False
         self.region_changed: bool = False
+        self._region_sprite: Optional[Image] = None
 
         self.setAcceptHoverEvents(True)
 
         # self.signal_holder = SignalHolder()
         self.region_info_signal = region_info_signal
 
-    def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         # self.logger.debug(self.region_id)
-        self.region_info_signal.emit(self.name, self.region_id, self.climate_str, self.relief_str, self.vegetation_str,
-                                self.water_str, self.world_object_str)
+        self.region_info_signal.emit(self.name, self.region_id,
+                                     self.climate_str, self.relief_str,
+                                     self.vegetation_str,
+                                     self.water_str,
+                                     self.world_object_str)
 
         # self.signal.emit(self.name, self.region_id, self.climate_str, self.relief_str,
         #                                self.vegetation_str,
@@ -100,7 +107,7 @@ class Region(QGraphicsPixmapItem):
         return (self.x + 0.5) * image_width, (self.y + 0.5) * image_height
 
     @staticmethod
-    def standalone_region_xy_to_scene_coords(x,y, image_width, image_height):
+    def standalone_region_xy_to_scene_coords(x, y, image_width, image_height):
         return (x + 0.5) * image_width, (y + 0.5) * image_height
 
     @property
@@ -108,7 +115,7 @@ class Region(QGraphicsPixmapItem):
         return self._region_sprite
 
     @region_sprite.setter
-    def region_sprite(self, image):
+    def region_sprite(self, image: Image):
         self._region_sprite = image
 
     @property
@@ -191,4 +198,3 @@ class RegionPixmap(QGraphicsPixmapItem):
     #     # self.climate_id = 0
     #     self.trigger.emit()
     #     self.logger.debug("mousePressEvent: %d, %d", self.pos().x(), self.pos().y())
-

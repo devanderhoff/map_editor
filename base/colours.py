@@ -3,7 +3,6 @@ from typing import Tuple, Optional, List, Any
 
 import numpy as np
 from numpy import ndarray
-from PIL import Image
 
 from utils.log import get_logger
 
@@ -41,7 +40,7 @@ class Colours:
 
     def __post_init__(self):
         if not hasattr(self, 'logger'):
-            self.logger = get_logger(__class__.__name__)
+            self.logger = get_logger(type(self).__name__)
         self.update()
 
     def update(self, blank_canvas: Optional[ndarray] = None, empty_array: Optional[ndarray] = None):
@@ -80,4 +79,4 @@ class Colours:
 
     def get_color_attributes(self) -> List[Tuple[str, Any]]:
         """Returns list of tuples with attribute names related to colour and their corresponding values"""
-        return [(attr, self.__getattribute__(attr),) for attr in self.__dict__ if attr.isupper()]
+        return [(attr, getattr(self, attr),) for attr in self.__dict__ if attr.isupper()]
