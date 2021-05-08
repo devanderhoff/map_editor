@@ -351,7 +351,7 @@ class World(QObject):
 
 
 class WorldSummary:
-    string: str = ''
+    string: str
     summary_lines: List[str]
 
     def __init__(self, regions: List[Region], init_only: bool = False):
@@ -362,15 +362,17 @@ class WorldSummary:
         :param init_only: (Optional) flag to set if the instance shouldn't immediately update the summary
             upon instantiation. (Default = False).
         """
-        if init_only:
+        self.summary_lines = []
+        self.string = ''
+        if not init_only:
             self.update(regions)
 
     def update(self, regions: List[Region], linesep: str = ' \n'):
 
-        climate_count: List[int] = [0] * 9
+        climate_count: List[int] = [0] * 10
         climate_count_spawns: List[int] = [0] * 10
         relief_count: List[int] = [0] * 5
-        forrest_count: List[int] = [0]
+        forest_count: List[int] = [0]
         water_count: List[int] = [0] * 6
 
         if regions:
@@ -383,7 +385,7 @@ class WorldSummary:
                 relief_count[region.relief_id] += 1
 
                 if region.vegetation_id == 1:
-                    forrest_count += 1
+                    forest_count += 1
 
                 water_count[region.water_id] += 1
 
@@ -407,13 +409,13 @@ class WorldSummary:
              f'Rocky = {relief_count[2]}',
              f'Hills = {relief_count[3]}',
              f'Mountains = {relief_count[4]}'
-             f'Forrest count = {forrest_count}',
+             f'Forrest count = {forest_count}',
              f'Water counts\n-------------------\n',
              f'River small = {water_count[1]}',
-             f'River medium = {water_count[2]}\n',
-             f'River large = {water_count[3]}\n',
-             f'Lakes = {water_count[4]}\n',
-             f'Swamps = {water_count[4]}',
+             f'River medium = {water_count[2]}',
+             f'River large = {water_count[3]}',
+             f'Lakes = {water_count[4]}',
+             f'Swamps = {water_count[5]}',
              f'\nPrimitives per climate',
              f'-------------------',
              f'Sea primitives = {climate_count_spawns[0]}',
