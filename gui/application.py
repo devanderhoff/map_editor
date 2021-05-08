@@ -295,7 +295,7 @@ class MainApplication(QApplication, SignalSlot):
             self.message_box.setIcon(QMessageBox.Information)
             self.message_box.show()
         else:
-            self.message_box.setText('Something went wrong')
+            self.message_box.setText('Cannot display summary as worldmap has no regions (yet?).')
             self.message_box.setIcon(QMessageBox.Critical)
             self.message_box.show()
 
