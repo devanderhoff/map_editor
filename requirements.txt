@@ -6,3 +6,8 @@ ruamel.yaml==0.17.4
 ruamel.yaml.clib==0.2.2
 six==1.15.0
 tqdm==4.60.0
+
+Pillow~=8.2.0
+PyQt5~=5.15.4
+nptyping~=1.4.1
+Pympler~=0.9
