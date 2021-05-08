@@ -57,9 +57,10 @@ class MainApplication(QApplication, SignalSlot):
         super().__init__(argv)
 
         # Initialize "world editor tool" attribute
-        self.paint_id: int = 0
-        self.brush_id: int = 0
-        self.brushes: List[str] = ['climate', 'relief', 'vegetation', 'water', 'spawn']
+        self.cur_paint_id: int = 0
+        self.cur_brush_id: int = 0
+        self.brushes: Dict[int, str] = {0: 'climate', 1: 'relief', 2: 'vegetation',
+                                        3: 'water', 4: 'world_object', 5: 'utility'}
 
         self.logger = get_logger(f'{__name__}: {type(self).__name__}')
         self.world_loaded: bool = False
@@ -169,33 +170,14 @@ class MainApplication(QApplication, SignalSlot):
 
     def recreate_sprite_slot(self, region_id: int):
         """Slot that provides brush functionality"""
-        if self.brush_id == 0:
-            self.worldmap.regions[region_id].climate_id = self.paint_id
-        elif self.brush_id == 1:
-            self.worldmap.regions[region_id].relief_id = self.paint_id
-        elif self.brush_id == 2:
-            self.worldmap.regions[region_id].vegetation_id = self.paint_id
-        elif self.brush_id == 3:
-            self.worldmap.regions[region_id].water_id = self.paint_id
-        elif self.brush_id == 4:
-            self.worldmap.regions[region_id].world_object_id = self.paint_id
-        elif self.brush_id == 5:
-            # Utility brush;
-            if self.paint_id == 0:
-                self.worldmap.regions[region_id].climate_id = 0
-                self.worldmap.regions[region_id].relief_id = 0
-                self.worldmap.regions[region_id].vegetation_id = 0
-                self.worldmap.regions[region_id].water_id = 0
-                self.worldmap.regions[region_id].world_object_id = 0
-            if self.paint_id == 1:
-                self.worldmap.regions[region_id].climate_id = 1
-                self.worldmap.regions[region_id].relief_id = 1
-                self.worldmap.regions[region_id].vegetation_id = 0
-                self.worldmap.regions[region_id].water_id = 0
-                self.worldmap.regions[region_id].world_object_id = 0
+        if self.cur_brush_id not in self.brushes:
+            raise KeyError("Tried to use brush with unmapped brush id: %d. Brush id map: %s", self.cur_brush_id,
+                           str(self.brushes))
 
-        # Recreate sprite with adjusted region values, include signal_flag = True to rebuild adjacent tiles.
-        self.worldmap.create_region_sprite(region_id, self.scale, signal_flag=True)
+        self.worldmap.paint_region(region_id=region_id,
+                                   brush=self.brushes[self.cur_brush_id],
+                                   paint_id=self.cur_paint_id,
+                                   scale=self.scale)
 
     def remove_primitives(self):
         """Menu function to remove all primitive spawns on the worldmap"""

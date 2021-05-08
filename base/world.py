@@ -317,6 +317,27 @@ class World(QObject):
 
         self.regions[n].river_adjacency = river_adjacency_temp
 
+    def paint_region(self, region_id: int, brush: str, paint_id: int, scale: Tuple[int, int], signal_flag: bool = True):
+
+        if brush != 'utility':
+            setattr(self.regions[region_id], f'{brush}_id', paint_id)
+
+        elif brush == 'utility':
+            for attrname, paintid1 in zip(('climate_id', 'relief_id', 'vegetation_id', 'water_id', 'world_object_id'),
+                                          [1, 1, 0, 0, 0]):
+                if not paint_id:  # Set regions to 0 if paint_id == 0
+                    setattr(self.regions[region_id], attrname, 0)
+                elif paint_id == 1:  # Set regions to 0 or 1 according to the [1, 1, 0, ...] list above if paint_id ==1 0
+                    setattr(self.regions[region_id], attrname, paintid1)
+                else:
+                    self.logger.warning("Got paint_id %d; behaviour undefined (only for 0 and 1; was this intended?", paint_id)
+
+                if not hasattr(self.regions[region_id], attrname):
+                    self.logger.warning("Region with id %d missing expected attribute: %s", attrname)
+
+        # Recreate sprite with adjusted region values, include signal_flag = True to rebuild adjacent tiles.
+        self.create_region_sprite(region_id, scale, signal_flag=signal_flag)
+
     def create_world_image(self) -> NoReturn:
         """Unused"""
         # !TODO method World.create_world_image() is not used.
@@ -330,7 +351,6 @@ class World(QObject):
 
 
 class WorldSummary:
-
     string: str = ''
     summary_lines: List[str]
 
