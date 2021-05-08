@@ -6,6 +6,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from base.image import WorldmapSprites
 from base.region import Region
+from game_objects.object_types import UtilityType, ClimateType, ReliefType, VegetationType, WaterType, WorldObjectType
 from utils.log import get_logger
 
 
@@ -317,23 +318,24 @@ class World(QObject):
 
         self.regions[n].river_adjacency = river_adjacency_temp
 
-    def paint_region(self, region_id: int, brush: str, paint_id: int, scale: Tuple[int, int], signal_flag: bool = True):
+    def paint_region(self, region_id: int, brush_id: int, paint_id: int, scale: Tuple[int, int], signal_flag: bool = True):
 
-        if brush != 'utility':
-            setattr(self.regions[region_id], f'{brush}_id', paint_id)
+        if type(brush) == UtilityType:
+            if paint_id == 0:
+                self.regions[region_id].climate = ClimateType(0)
+                self.regions[region_id].relief = ReliefType(0)
+                self.regions[region_id].vegetation = VegetationType(0)
+                self.regions[region_id].water = WaterType(0)
+                self.regions[region_id].world_object = WorldObjectType(0)
+            elif paint_id == 1:
+                self.regions[region_id].climate = ClimateType(1)
+                self.regions[region_id].relief = ReliefType(1)
+                self.regions[region_id].vegetation = VegetationType(0)
+                self.regions[region_id].water = WaterType(0)
+                self.regions[region_id].world_object = WorldObjectType(0)
 
-        elif brush == 'utility':
-            for attrname, paintid1 in zip(('climate_id', 'relief_id', 'vegetation_id', 'water_id', 'world_object_id'),
-                                          [1, 1, 0, 0, 0]):
-                if not paint_id:  # Set regions to 0 if paint_id == 0
-                    setattr(self.regions[region_id], attrname, 0)
-                elif paint_id == 1:  # Set regions to 0 or 1 according to the [1, 1, 0, ...] list above if paint_id ==1 0
-                    setattr(self.regions[region_id], attrname, paintid1)
-                else:
-                    self.logger.warning("Got paint_id %d; behaviour undefined (only for 0 and 1; was this intended?", paint_id)
-
-                if not hasattr(self.regions[region_id], attrname):
-                    self.logger.warning("Region with id %d missing expected attribute: %s", attrname)
+        else:
+            setattr(self.regions[region_id], brush, paint_id)
 
         # Recreate sprite with adjusted region values, include signal_flag = True to rebuild adjacent tiles.
         self.create_region_sprite(region_id, scale, signal_flag=signal_flag)

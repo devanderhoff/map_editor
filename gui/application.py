@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QGraphicsScene, QMessageB
 
 from base.region import Region
 from base.world import World, WorldSummary
+from game_objects.object_types import ClimateType, ReliefType, VegetationType, WaterType, WorldObjectType
 from gui.MainwindowUI import MainWindow
 from gui.create_new_world_dialog import NewWorldDialog
 from gui.signal_slots import SignalSlot
@@ -59,8 +60,6 @@ class MainApplication(QApplication, SignalSlot):
         # Initialize "world editor tool" attribute
         self.cur_paint_id: int = 0
         self.cur_brush_id: int = 0
-        self.brushes: Dict[int, str] = {0: 'climate', 1: 'relief', 2: 'vegetation',
-                                        3: 'water', 4: 'world_object', 5: 'utility'}
 
         self.logger = get_logger(f'{__name__}: {type(self).__name__}')
         self.world_loaded: bool = False
@@ -114,7 +113,7 @@ class MainApplication(QApplication, SignalSlot):
 
         # Connect editor vegetation buttons to logic
         self.main_window.ui.pushButton_32.pressed.connect(self.press_vegetation_button_none)
-        self.main_window.ui.pushButton_35.pressed.connect(self.press_vegetation_button_forrest)
+        self.main_window.ui.pushButton_35.pressed.connect(self.press_vegetation_button_forest)
 
         # Connect editor river buttons to logic
         self.main_window.ui.pushButton_33.pressed.connect(self.press_river_button_none)
@@ -155,30 +154,30 @@ class MainApplication(QApplication, SignalSlot):
         # Open application
         self.main_window.show()
 
-    def display_region_info(self, name: str, region_id: int, climate_str: str, relief_str: str, vegetation_str: str,
-                            water_str: str, world_object_str: str):
+    def display_region_info(self, name: str, region_id: int, climate: ClimateType, relief: ReliefType,
+                            vegetation: VegetationType, water: WaterType, world_object: WorldObjectType):
         """Slot that provides logic to populate the region information display"""
         self.logger.debug(f'Display region information of region {name}, with region ID {region_id}')
 
         text = ' \n'.join([f'Region name: {name}',
                            f'Region ID: {region_id}',
-                           f'Climate: {climate_str}',
-                           f'Relief: {relief_str}',
-                           f'Vegetation: {vegetation_str}',
-                           f'Water: {water_str}',
-                           f'Primitive: {world_object_str}',
+                           f'Climate: {climate.name}',
+                           f'Relief: {relief.name}',
+                           f'Vegetation: {vegetation.name}',
+                           f'Water: {water.name}',
+                           f'Primitive: {world_object.name}',
                            '------------------'])
 
         self.main_window.ui.textBrowser.setPlainText(text)
 
     def recreate_sprite_slot(self, region_id: int):
         """Slot that provides brush functionality"""
-        if self.cur_brush_id not in self.brushes:
-            raise KeyError("Tried to use brush with unmapped brush id: %d. Brush id map: %s", self.cur_brush_id,
-                           str(self.brushes))
+        # if self.cur_brush_id not in self.brushes:
+        #     raise KeyError("Tried to use brush with unmapped brush id: %d. Brush id map: %s", self.cur_brush_id,
+        #                    str(self.brushes))
 
         self.worldmap.paint_region(region_id=region_id,
-                                   brush=self.brushes[self.cur_brush_id],
+                                   brush_id=self.cur_brush_id,
                                    paint_id=self.cur_paint_id,
                                    scale=self.scale)
 

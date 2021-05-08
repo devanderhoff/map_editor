@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple
 
 from PIL import Image, PngImagePlugin
 import numpy as np

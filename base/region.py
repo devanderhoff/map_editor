@@ -1,3 +1,4 @@
+from enum import Enum, IntEnum
 from typing import Optional, List, Any, Union
 
 from PIL.Image import Image
@@ -5,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsSceneHoverEvent
 from nptyping import NDArray
 
+from game_objects.object_types import ClimateType, ReliefType, VegetationType, WaterType, WorldObjectType
 from utils.log import get_logger
 # class SignalHolder(QObject):
 #     signal = pyqtSignal(str, int, str, str, str, str, str)
@@ -18,22 +20,15 @@ class Region(QGraphicsPixmapItem):
     Region class that holds all region (tile) data.
     """
     # Initialize region information.
-    CLIMATES = ("SEA", "CONTINENTAL", "OCEANIC",
-                "MEDITERRANEAN", "TROPICAL", "ARID",
-                "DESERT", "NORDIC", "POLAR", "UNKNOWN",)
-    RELIEF = ("FLAT", "PLAIN", "ROCKY", "HILLS", "MOUNTAINS",)
-    VEGETATION = ("NONE", "FOREST", )
-    WATER = ("NONE", "RIVER_SMALL", "RIVER_MED", "RIVER_LARGE", "LAKE", "SWAMP",)
-    WORLD_OBJECT = ("NONE", "SPAWN",)
 
     def __init__(self, x: int, y: int,
                  name: str,
                  region_id: int,
-                 climate_id: int,
-                 relief_id: int,
-                 vegetation_id: int,
-                 water_id: int,
-                 worldobject_id: int,
+                 climate_id: Union[ClimateType, int],
+                 relief_id: Union[ReliefType, int],
+                 vegetation_id: Union[VegetationType, int],
+                 water_id: Union[WaterType, int],
+                 worldobject_id: Union[WorldObjectType, int],
                  region_bytes: int,
                  region_info_signal: pyqtSignal):
         # X and Y coordinates start top-left corner.
@@ -57,20 +52,11 @@ class Region(QGraphicsPixmapItem):
         self.name: str = name
         self.region_id: int = region_id
 
-        self.climate_id: int = climate_id
-        self.climate_str = self.CLIMATES[climate_id]
-
-        self.relief_id: int = relief_id
-        self.relief_str = self.RELIEF[relief_id]
-
-        self.vegetation_id: int = vegetation_id
-        self.vegetation_str = self.VEGETATION[vegetation_id]
-
-        self.water_id: int = water_id
-        self.water_str = self.WATER[water_id]
-
-        self.world_object_id: int = worldobject_id
-        self.world_object_str = self.WORLD_OBJECT[worldobject_id]
+        self.climate: ClimateType = ClimateType(climate_id)
+        self.relief: ReliefType = ReliefType(relief_id)
+        self.vegetation: VegetationType = VegetationType(vegetation_id)
+        self.water: WaterType = WaterType(water_id)
+        self.world_object: WorldObjectType = WorldObjectType(worldobject_id)
 
         # contains information about coast and river adjacency
         self.coastal_adjacency: Optional[NDArray[3, 3, bool]] = None
@@ -91,10 +77,10 @@ class Region(QGraphicsPixmapItem):
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         # self.logger.debug(self.region_id)
         self.region_info_signal.emit(self.name, self.region_id,
-                                     self.climate_str, self.relief_str,
-                                     self.vegetation_str,
-                                     self.water_str,
-                                     self.world_object_str)
+                                     self.climate_id.name, self.relief_id.name,
+                                     self.vegetation_id.name,
+                                     self.water_id.name,
+                                     self.world_object_id.name)
 
         # self.signal.emit(self.name, self.region_id, self.climate_str, self.relief_str,
         #                                self.vegetation_str,
@@ -119,62 +105,57 @@ class Region(QGraphicsPixmapItem):
         self._region_sprite = image
 
     @property
-    def climate_id(self):
+    def climate_id(self) -> ClimateType:
         return self._climate_id
 
     @climate_id.setter
-    def climate_id(self, value):
+    def climate_id(self, value: Union[int, ClimateType]):
         if not self.init_flag:
-            self._climate_id = value
+            self._climate_id: ClimateType = ClimateType(value)
             self.region_list[0] = value
-            self.climate_str = self.CLIMATES[value]
 
     @property
-    def relief_id(self):
+    def relief_id(self) -> ReliefType:
         return self._relief_id
 
     @relief_id.setter
-    def relief_id(self, value):
+    def relief_id(self, value: Union[int, ReliefType]):
         if not self.init_flag:
-            self._relief_id = value
+            self._relief_id: ReliefType = ReliefType(value)
             self.region_list[1] = value
-            self.relief_str = self.RELIEF[value]
             # self.world_trigger.emit(self.region_id)
 
     @property
-    def vegetation_id(self):
+    def vegetation_id(self) -> VegetationType:
         return self._vegetation_id
 
     @vegetation_id.setter
-    def vegetation_id(self, value):
+    def vegetation_id(self, value: Union[int, VegetationType]):
         if not self.init_flag:
-            self._vegetation_id = value
+            self._vegetation_id: VegetationType = VegetationType(value)
             self.region_list[2] = value
-            self.vegetation_str = self.VEGETATION[value]
             # self.world_trigger.emit(self.region_id)
 
     @property
-    def water_id(self):
+    def water_id(self) -> WaterType:
         return self._water_id
 
     @water_id.setter
-    def water_id(self, value):
+    def water_id(self, value: Union[int, WaterType]):
         if not self.init_flag:
-            self._water_id = value
+            self._water_id = WaterType(value)
             self.region_list[3] = value
-            self.water_str = self.WATER[value]
             # self.world_trigger.emit(self.region_id)
 
     @property
-    def world_object_id(self):
+    def world_object_id(self) -> WorldObjectType:
         return self._world_object_id
 
     @world_object_id.setter
-    def world_object_id(self, value):
+    def world_object_id(self, value: Union[int, WorldObjectType]):
         if not self.init_flag:
-            self._world_object_id = value
+            self._world_object_id: WorldObjectType = WorldObjectType(value)
             self.region_list[4] = value
-            self.world_object_str = self.WORLD_OBJECT[value]
 
         # self.world_trigger.emit(self.region_id)
 

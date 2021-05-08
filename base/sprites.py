@@ -26,7 +26,7 @@ class Sprites:
 
     RELIEF: Optional[Tuple[Union[type(Image), ndarray], ...]] = None
 
-    # Vegetation
+    # Vegetationtry:
     sprite_grass = Image.open(WMAP_DIR / 'world_grass_1.png')
     sprite_cont_forest = Image.open(WMAP_DIR / 'world_continental_forest.png')
     sprite_cont_trees = Image.open(WMAP_DIR / 'world_continental_trees.png')
