@@ -76,6 +76,9 @@ class MainApplication(QApplication, SignalSlot):
 
         # Create new world dialog
         self.new_world_ui = NewWorldDialog()
+        self.new_world_ui.ui.spinBox_2.setValue(10)
+        self.new_world_ui.ui.spinBox.setValue(10)
+        self.new_world_ui.ui.spinBox_2.setMinimum(1)
         self.new_world_ui.ui.spinBox.setMinimum(1)
         self.new_world_ui.ui.spinBox_2.setMinimum(1)
         self.new_world_ui.ui.spinBox.setMaximum(150)
