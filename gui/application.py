@@ -330,7 +330,10 @@ class MainApplication(QApplication, SignalSlot):
                 self.message_box.show()
 
         else:
-            self.message_box.setText('Something went wrong')
+            if not self.worldmap.regions:
+                self.message_box.setText('Cannot save map as it has no regions (yet?).')
+            else:
+                self.message_box.setText('Something went wrong')
             self.message_box.setIcon(QMessageBox.Critical)
             self.message_box.show()
             return
